@@ -6,9 +6,14 @@
 #include <cstdint>
 #include <cstdlib>
 #include <string_view>
+#include <string>
+#include <cstring>
 #include <map>
 #include <memory>
+#include <functional>
 #include <cassert>
+
+namespace Vault {
 
 #define X_VALUE_TYPE(GEN) \
   GEN(UNIT)               \
@@ -19,16 +24,15 @@
   GEN(PAIR)               \
   GEN(LIST)               \
   GEN(DICT)               \
-  GEN(FUNC)               \
   GEN(PROGN)              \
-  GEN(NUM_VALUE_TYPE)
+  GEN(FUNC)               \
+  GEN(CFUNC)              \
+  GEN(NUM_VALUE_TYPE) 
 
-namespace Vault {
-  enum ValueType {
-    X_VALUE_TYPE(GEN_ENUM)
-  };
-
+  enum ValueType { X_VALUE_TYPE(GEN_ENUM) }; 
   constexpr std::string_view ValueTypeS[] = { X_VALUE_TYPE(GEN_STR) };
+
+#undef X_VALUE_TYPE
 
   struct Str {
     char* data{nullptr};
@@ -39,7 +43,7 @@ namespace Vault {
 
   struct Pair {
     union {
-      struct { Obj* next; Obj* slot; };
+      struct { Obj* slot; Obj* next; };
       struct { Obj* a; Obj* b; };
     };
   };
@@ -52,6 +56,8 @@ namespace Vault {
   using Bool = uint8_t;
   using Number = double;
 
+  typedef Obj*(*CFun)(Obj*, Obj*);
+
   union Val {
     Str atom;
     Number num;
@@ -59,6 +65,7 @@ namespace Vault {
     Bool boolean;
     List list; 
     Dict dict;
+    CFun cfun;
   };
 
   struct Obj {
@@ -86,6 +93,7 @@ namespace Vault {
       case ValueType::ATOM: { os << obj->toStrView(); break; }
       case ValueType::NUMBER: { os << obj->val.num; break; }
       case ValueType::STR: { os << obj->toStrView(); break; }
+      case ValueType::BOOL: { os << (obj->val.boolean ? "#t" : "#f"); break; }
 
       case ValueType::LIST: 
       case ValueType::PROGN: { 
@@ -100,6 +108,11 @@ namespace Vault {
         break;
       }
 
+      case ValueType::CFUNC: {
+        std::cout << "<cfun>";
+        break;
+      }
+
       default: std::cout << "<unknown>"; break;
     }
   }
@@ -111,12 +124,24 @@ namespace Vault {
   Obj* newAtom(const std::string &atom="");
   Obj* newProgn(); 
   Obj* newPair(Obj* a=NULL, Obj* b=NULL);
+  Obj* newCFun(CFun lambda);
+
+  Obj* newEnv();
+
+  Obj* findInEnv(Obj* env, Obj* atom);
+  Obj* putInEnv(Obj* env, Obj* atom, Obj* value);
+  Obj* pushEnv(Obj* env);
 
   static Obj* newUnit() {
     static Obj unit = {}; 
     unit.type = ValueType::UNIT;
     return &unit;
   }
+
+  bool cmp(Obj* a, Obj* b);
+  bool isTrue(Obj* v);
+
+  void each(Obj* list, std::function<void(Obj*)> fn);
 
   size_t len(Obj* list);
 
@@ -125,6 +150,9 @@ namespace Vault {
   Obj* cons(Obj* list, Obj* value); 
   Obj* car(Obj* list);
   Obj* cdr(Obj* list);
+
+  Obj* fst(Obj* list);
+  Obj* snd(Obj* list);
 
   void freeObj(Obj* obj); 
   Obj* ref(Obj* obj);

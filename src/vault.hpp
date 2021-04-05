@@ -1,6 +1,9 @@
 #pragma once
 
 #include <string_view>
+#include <iostream>
+#include <sstream>
+#include <string> 
 
 #define VAULT_VERSION_MAJOR "0"
 #define VAULT_VERSION_MINOR "0"
@@ -41,3 +44,9 @@ privDefer<F> defer_func(F f) {
 #define DEFER_2(x, y) DEFER_1(x, y)
 #define DEFER_3(x)    DEFER_2(x, __COUNTER__)
 #define defer(code)   auto DEFER_3(_defer_) = defer_func([&](){code;})
+
+inline std::string readInput() {
+  std::string result{""}; 
+  std::getline(std::cin, result); 
+  return result;
+}

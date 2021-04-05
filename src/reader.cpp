@@ -103,6 +103,7 @@ Obj* readExpr(std::string_view::iterator& it, std::string_view::iterator& end) {
       }
 
       std::cout << "Unbalanced parenthises" << std::endl;
+      return newUnit();
     }
 
     case TokType::TOK_CLOSE_PAREN: { return newUnit(); }

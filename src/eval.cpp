@@ -2,17 +2,14 @@
 
 using namespace Vault;
 
-Obj* invoke(Obj* callable, Obj* args) {
+Obj* invoke(Obj* env, Obj* callable, Obj* args) {
   const auto numArgs = Vault::len(args);
 
-  if (callable->type == ValueType::ATOM) {
-    if (callable->toStrView() == "+") {
-      double result = 0.0;
-      for (int i = 0; i < numArgs; i++) {
-        result += args->get(i)->asNum();
-      }
-      return newNum(result);
-    }
+  if (callable->type == ValueType::CFUNC) {
+    return callable->val.cfun(env, args);
+  } else {
+    std::cout << "Can't evaluate function: " << callable << std::endl;
+    return newUnit();
   }
 
   return newUnit();
@@ -20,11 +17,19 @@ Obj* invoke(Obj* callable, Obj* args) {
 
 Obj* evalExpr(Obj* env, Obj* obj) {
   switch(obj->type) {
-    case ValueType::ATOM:
+    case ValueType::UNIT:
     case ValueType::BOOL:
     case ValueType::NUMBER:
     case ValueType::STR:
       return obj;
+
+    case ValueType::ATOM: {
+      auto* atom = findInEnv(env, obj);
+      if (!atom || atom->type == ValueType::UNIT) {
+        std::cout << "Cannot find '" << obj << "' in the environment" << std::endl;
+      }
+      return atom;
+    }
 
     case ValueType::LIST: {
       const auto len = Vault::len(obj);
@@ -32,7 +37,7 @@ Obj* evalExpr(Obj* env, Obj* obj) {
         std::cout << "Error, evaluating empty list" << std::endl;
         return newUnit();
       }
-      return invoke(evalExpr(env, car(obj)), cdr(obj));
+      return invoke(env, evalExpr(env, car(obj)), cdr(obj));
     }
 
     case ValueType::PROGN: {

@@ -7,15 +7,14 @@
 #include "reader.hpp"
 #include "object.hpp"
 #include "eval.hpp"
+#include "prelude.hpp"
 
-std::string readInput() {
-  std::string result{""}; 
-  std::getline(std::cin, result); 
-  return result;
-}
+using namespace Vault;
 
 Vault::Status repl() {
   std::cout << "Vault (" << VAULT_VERSION << ")\n";
+
+  auto* env = Vault::newStdEnv(); 
 
   while (true) {
     std::cout << "> ";
@@ -23,7 +22,7 @@ Vault::Status repl() {
     if (line == "q") break; 
     if (line == "(quit)") break;
     auto* progn = Vault::readCode(line);
-    auto* result = Vault::eval(Vault::newList(), progn);
+    auto* result = Vault::eval(env, progn);
     std::cout << result->get(0) << std::endl;
     deRef(progn);
   }
@@ -31,7 +30,7 @@ Vault::Status repl() {
   return Vault::Status::SUCCESS;
 }
 
-int main(const int num_args, const char* args[]) {
+int main(const int num_args, const char* args[]) { 
   if (num_args == 1) { return repl(); }
 
   return EXIT_SUCCESS;

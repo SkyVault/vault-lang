@@ -32,7 +32,11 @@ Bool Obj::asBool() {
 
 List& Obj::asList() {
 #ifdef VAULT_VALUE_CHECK 
-  assert(this->type == ValueType::LIST || this->type == ValueType::PROGN); 
+  assert(
+    this->type == ValueType::LIST 
+    || this->type == ValueType::PROGN 
+    || this->type == ValueType::PAIR
+  ); 
 #endif 
   return val.list;
 }
@@ -66,6 +70,7 @@ void Vault::deRef(Obj *obj) {
   obj->ref -= 1;
 
   switch (obj->type) {
+  case ValueType::UNIT: break;
   case ValueType::LIST: {
     if (obj->val.list.next) deRef(obj->val.list.next);
     if (obj->val.list.slot) deRef(obj->val.list.slot);
@@ -83,8 +88,8 @@ void Vault::deRef(Obj *obj) {
 Obj* Vault::newPair(Obj* a, Obj* b) { 
   Obj* obj = Vault::alloc<Obj>();
   obj->type = Vault::ValueType::PAIR;
-  obj->val.list.next = a;
-  obj->val.list.slot = b;
+  obj->val.list.slot = a;
+  obj->val.list.next = b;
   return obj;
 }
 
@@ -132,6 +137,46 @@ Obj* Vault::newProgn() {
   return obj;
 }
 
+Obj* Vault::newCFun(CFun lambda) {
+  Obj* obj = Vault::alloc<Obj>();
+  obj->type = ValueType::CFUNC;
+  obj->val.cfun = lambda;
+  return obj;
+}
+
+Obj* Vault::newEnv(){
+  auto list = newList(); 
+  return list;
+}
+
+Obj* findPairInEnv(Obj* env, Obj* atom) { 
+  const size_t envSize = Vault::len(env);
+  for(int i = envSize - 1; i >= 0; i--) {
+    auto* pair = env->get(i);
+    if (cmp(fst(pair), atom)) {
+      return pair;
+    }
+  }
+  return NULL;
+}
+
+Obj* Vault::findInEnv(Obj* env, Obj* atom){
+  auto p = findPairInEnv(env, atom);
+  if (!p) return newUnit();
+  return snd(p);
+}
+
+Obj* Vault::putInEnv(Obj* env, Obj* atom, Obj* value) {
+  auto exists = findPairInEnv(env, atom);
+  if (exists) { exists->val.list.b = value; return value; }
+  push(env, newPair(atom, value));
+  return value;
+}
+
+Obj* Vault::pushEnv(Obj* env){
+
+}
+
 Obj* Vault::Obj::get(int index) { 
 #ifdef VAULT_VALUE_CHECK 
   assert(this->type == ValueType::LIST || this->type == ValueType::PROGN); 
@@ -156,6 +201,31 @@ std::string_view Vault::Obj::toStrView() const {
     assert(this->type == ValueType::ATOM || this->type == ValueType::STR);
   #endif
   return std::string_view(this->val.atom.data, this->val.atom.len);
+}
+
+bool Vault::isTrue(Obj* v) {
+  if (!v) return false;
+  if (v->type == ValueType::UNIT) return false;
+  if (v->type == ValueType::BOOL) return v->asBool();
+  if (v->type == ValueType::NUMBER) return v->asNum() == 0.0;
+  return true;
+}
+
+bool Vault::cmp(Obj* a, Obj* b) {
+  if (a == b) return true;
+  if (a->type != b->type) return false; // TODO(Dustin): Look into auto promoting types
+
+  switch(a->type) {
+    case ValueType::NUMBER: return a->asNum() == b->asNum();
+    case ValueType::STR:
+    case ValueType::ATOM: return
+      a->asAtom().len == b->asAtom().len 
+      && strncmp(a->asAtom().data, b->asAtom().data, a->asAtom().len) == 0;
+    case ValueType::BOOL: return a->asBool() == b->asBool();
+    default: 
+      assert(0);
+      return false;
+  }
 }
 
 size_t Vault::len(Obj* list) {
@@ -186,6 +256,18 @@ void Vault::push(Obj* list, Obj* value) {
   it->val.list.next->val.list.slot = value;
 }
 
+void Vault::each(Obj* list, std::function<void(Obj*)> fn) {
+#ifdef VAULT_VALUE_CHECK
+  assert(list->type == ValueType::LIST || list->type == ValueType::PAIR);
+#endif
+
+  auto it = list;
+  while (it) {
+    fn(it->val.list.slot);
+    it = it->val.list.next;
+  }
+}
+
 Obj* Vault::cons(Obj* value, Obj* list) {
   auto* head = newList();
   head->asList().next = list;
@@ -193,10 +275,8 @@ Obj* Vault::cons(Obj* value, Obj* list) {
   return head;
 }
 
-Obj* Vault::car(Obj* list){
-  return list->asList().slot;
-}
+Obj* Vault::car(Obj* list){ return list->val.list.slot; }
+Obj* Vault::cdr(Obj* list){ return list->val.list.next; }
 
-Obj* Vault::cdr(Obj* list){
-  return list->asList().next;
-}
+Obj* Vault::fst(Obj* list) { return list->val.list.a; } 
+Obj* Vault::snd(Obj* list) { return list->val.list.b; } 
