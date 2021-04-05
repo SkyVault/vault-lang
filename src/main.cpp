@@ -3,6 +3,9 @@
 #include <string>
 
 #include "vault.hpp"
+#include "gc.hpp" 
+#include "reader.hpp"
+#include "object.hpp"
 
 std::string readInput() {
   std::string result{""}; 
@@ -13,17 +16,9 @@ std::string readInput() {
 Vault::Status repl() {
   std::cout << "Vault (" << VAULT_VERSION << ")\n";
 
-  bool running = true;
-  while (running) { 
-    // Read
-    std::cout << VAULT_PROMPT;
+  Vault::Obj* progn = Vault::readCode("(+ 1 2 3)");
 
-    std::string code = readInput();
-
-    // Eval
-
-    // Print
-  }
+  deRef(progn); 
 
   return Vault::Status::SUCCESS;
 }
