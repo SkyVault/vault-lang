@@ -28,7 +28,7 @@ namespace Vault {
     X_VALUE_TYPE(GEN_ENUM)
   };
 
-  constexpr std::string_view VaultTypeS[] = { X_VALUE_TYPE(GEN_STR) };
+  constexpr std::string_view ValueTypeS[] = { X_VALUE_TYPE(GEN_STR) };
 
   struct Str {
     char* data{nullptr};

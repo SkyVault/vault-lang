@@ -4,7 +4,7 @@ using namespace Vault;
 
 std::string fromRange(std::string_view::iterator start, std::string_view::iterator end) { 
     std::stringstream ss;
-    while (start != end) { 
+    while (start < end) { 
       ss << *start;
       start++;
     }
@@ -75,7 +75,7 @@ Tok Vault::readToken(std::string_view::iterator& it, std::string_view::iterator&
     return Tok{ TokType::TOK_CLOSE_PAREN, ")" }; 
   }
 
-  while (it  && !IsDelim(*it)) {
+  while (it != end  && !IsDelim(*it)) {
     it++;
   }
 

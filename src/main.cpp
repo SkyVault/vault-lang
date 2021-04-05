@@ -6,6 +6,7 @@
 #include "gc.hpp" 
 #include "reader.hpp"
 #include "object.hpp"
+#include "eval.hpp"
 
 std::string readInput() {
   std::string result{""}; 
@@ -16,9 +17,16 @@ std::string readInput() {
 Vault::Status repl() {
   std::cout << "Vault (" << VAULT_VERSION << ")\n";
 
-  Vault::Obj* progn = Vault::readCode("(+ 1 2 3)");
-  std::cout << progn;
-  deRef(progn); 
+  while (true) {
+    std::cout << "> ";
+    const auto line = readInput();
+    if (line == "q") break; 
+    if (line == "(quit)") break;
+    auto* progn = Vault::readCode(line);
+    auto* result = Vault::eval(Vault::newList(), progn);
+    std::cout << result->get(0) << std::endl;
+    deRef(progn);
+  }
 
   return Vault::Status::SUCCESS;
 }
