@@ -38,8 +38,7 @@ namespace Vault {
     friend std::ostream& operator<<(std::ostream& os, const Tok& tok);
   };
 
-  inline
-  std::ostream& operator<<(std::ostream& os, const Tok& tok) {
+  inline std::ostream& operator<<(std::ostream& os, const Tok& tok) {
     switch(tok.type) {
       case TokType::TOK_NUM_LIT: {
         os << "<num " << tok.lexeme << ">";

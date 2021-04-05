@@ -151,6 +151,23 @@ Obj* Vault::Obj::get(int index) {
   return NULL;
 }
 
+std::string_view Vault::Obj::toStrView() const {
+  #ifdef VAULT_VALUE_CHECK
+    assert(this->type == ValueType::ATOM || this->type == ValueType::STR);
+  #endif
+  return std::string_view(this->val.atom.data, this->val.atom.len);
+}
+
+size_t Vault::len(Obj* list) {
+  auto it = list;
+  int i = 0;
+  while (it) {
+    i+=1;
+    it = it->asList().next;
+  }
+  return i;
+}
+
 void Vault::push(Obj* list, Obj* value) {
   assert(list->type == ValueType::LIST || list->type == ValueType::PROGN);
 
@@ -167,4 +184,19 @@ void Vault::push(Obj* list, Obj* value) {
 
   it->val.list.next = newList();
   it->val.list.next->val.list.slot = value;
+}
+
+Obj* Vault::cons(Obj* value, Obj* list) {
+  auto* head = newList();
+  head->asList().next = list;
+  head->asList().slot = value;
+  return head;
+}
+
+Obj* Vault::car(Obj* list){
+  return list->asList().slot;
+}
+
+Obj* Vault::cdr(Obj* list){
+  return list->asList().next;
 }

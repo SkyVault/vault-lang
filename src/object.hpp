@@ -44,9 +44,8 @@ namespace Vault {
     };
   };
 
-  using List = Pair;
-
-  struct Dict { };
+  using List = Pair; 
+  using Dict = List; // List of pairs (k, v), in the future this will be an actual hashmap
 
   using Env = Dict;
 
@@ -76,7 +75,34 @@ namespace Vault {
     Dict& asDict();
 
     Obj* get(int index);
+    std::string_view toStrView() const;
+
+    friend std::ostream& operator<<(std::ostream& os, const Obj* obj);
   };
+
+  inline std::ostream& operator<<(std::ostream& os, const Obj* obj) {
+    switch(obj->type) {
+      case ValueType::UNIT: { os << "()"; break; }
+      case ValueType::ATOM: { os << obj->toStrView(); break; }
+      case ValueType::NUMBER: { os << obj->val.num; break; }
+      case ValueType::STR: { os << obj->toStrView(); break; }
+
+      case ValueType::LIST: 
+      case ValueType::PROGN: { 
+        std::cout << "(";
+        auto it = (Obj*)obj;
+        while (it) {
+          os << it->asList().slot;
+          it = it->asList().next;
+          if (it){ os << " "; }
+        }
+        os << ")";
+        break;
+      }
+
+      default: std::cout << "<unknown>"; break;
+    }
+  }
 
   Obj* newList();
   Obj* newNum(Number number=0.0);
@@ -92,7 +118,13 @@ namespace Vault {
     return &unit;
   }
 
+  size_t len(Obj* list);
+
   void push(Obj* list, Obj* value);
+
+  Obj* cons(Obj* list, Obj* value); 
+  Obj* car(Obj* list);
+  Obj* cdr(Obj* list);
 
   void freeObj(Obj* obj); 
   Obj* ref(Obj* obj);

@@ -17,7 +17,7 @@ Vault::Status repl() {
   std::cout << "Vault (" << VAULT_VERSION << ")\n";
 
   Vault::Obj* progn = Vault::readCode("(+ 1 2 3)");
-
+  std::cout << progn;
   deRef(progn); 
 
   return Vault::Status::SUCCESS;
