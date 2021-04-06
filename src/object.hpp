@@ -58,6 +58,13 @@ namespace Vault {
 
   typedef Obj*(*CFun)(Obj*, Obj*);
 
+  struct Fun {
+    Obj* capturedEnv;
+    Obj* name;
+    Obj* params; // List of atoms
+    Obj* progn;
+  };
+
   union Val {
     Str atom;
     Number num;
@@ -66,6 +73,7 @@ namespace Vault {
     List list; 
     Dict dict;
     CFun cfun;
+    Fun fun;
   };
 
   struct Obj {
@@ -125,6 +133,7 @@ namespace Vault {
   Obj* newProgn(); 
   Obj* newPair(Obj* a=NULL, Obj* b=NULL);
   Obj* newCFun(CFun lambda);
+  Obj* newFun(Obj* env, Obj* name, Obj* params, Obj* progn);
 
   Obj* newEnv();
 
@@ -150,6 +159,8 @@ namespace Vault {
   Obj* cons(Obj* list, Obj* value); 
   Obj* car(Obj* list);
   Obj* cdr(Obj* list);
+
+  Obj* shift(Obj* &list); // Pops off the top
 
   Obj* fst(Obj* list);
   Obj* snd(Obj* list);

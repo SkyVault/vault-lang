@@ -2,7 +2,7 @@
 
 using namespace Vault;
 
-std::string fromRange(std::string_view::iterator start, std::string_view::iterator end) { 
+std::string fromRange(std::string::iterator start, std::string::iterator end) { 
     std::stringstream ss;
     while (start < end) { 
       ss << *start;
@@ -15,11 +15,7 @@ bool IsDelim(char ch) {
   return std::isspace(ch) || ch == '(' || ch == ')';
 }
 
-Tok Vault::peakToken(std::string_view::iterator& it, std::string_view::iterator& end) {
-
-}
-
-Tok Vault::readToken(std::string_view::iterator& it, std::string_view::iterator& end) {
+Tok Vault::readToken(std::string::iterator& it, std::string::iterator& end) {
   while (std::isspace(*it)) { it += 1; }
   if (it >= end) return Tok{};
 
@@ -28,12 +24,18 @@ Tok Vault::readToken(std::string_view::iterator& it, std::string_view::iterator&
 
   auto start = it;
 
+  // Skip comments
+  if (*it == ';') {
+    while (it != end && *it != '\n') it++;
+    if (it == end) return Tok{};
+  }
+
   // Parsing numbers
   if (*it == '-') { isNeg = true; it++; }
   if (*it == '.') { isDec = true; it++; }
 
   if (std::isdigit(*it)) {
-    while (it) {
+    while (it != end) {
       if (*it == '.') {
         if (isDec) break;
         else isDec = true;
@@ -41,8 +43,7 @@ Tok Vault::readToken(std::string_view::iterator& it, std::string_view::iterator&
         continue;
       }
 
-      if (!std::isdigit(*it)) 
-        break; 
+      if (!std::isdigit(*it)) break; 
 
       it++;
     }
@@ -75,6 +76,17 @@ Tok Vault::readToken(std::string_view::iterator& it, std::string_view::iterator&
     return Tok{ TokType::TOK_CLOSE_PAREN, ")" }; 
   }
 
+  if (*it == '\"') {
+    it++;
+    start = it;
+    while (it != end && *it != '\"') {
+      it++;
+    }
+    const auto stop = it;
+    it += 1;
+    return Tok{TokType::TOK_STR_LIT, fromRange(start, stop)};
+  }
+
   while (it != end  && !IsDelim(*it)) {
     it++;
   }
@@ -82,7 +94,7 @@ Tok Vault::readToken(std::string_view::iterator& it, std::string_view::iterator&
   return Tok{TokType::TOK_ATOM_LIT, fromRange(start, it)};
 }
 
-Obj* readExpr(std::string_view::iterator& it, std::string_view::iterator& end) {
+Obj* readExpr(std::string::iterator& it, std::string::iterator& end) {
   auto tok = readToken(it, end);
 
   switch(tok.type){
@@ -106,6 +118,7 @@ Obj* readExpr(std::string_view::iterator& it, std::string_view::iterator& end) {
       return newUnit();
     }
 
+    case TokType::TOK_END:
     case TokType::TOK_CLOSE_PAREN: { return newUnit(); }
 
     default: {
@@ -116,7 +129,7 @@ Obj* readExpr(std::string_view::iterator& it, std::string_view::iterator& end) {
   }
 }
 
-Obj* readProgn(std::string_view::iterator& it, std::string_view::iterator& end) {
+Obj* readProgn(std::string::iterator& it, std::string::iterator& end) {
   Obj* progn = newProgn(); 
   while(it < end) {
     auto expr = readExpr(it, end); 
@@ -125,8 +138,8 @@ Obj* readProgn(std::string_view::iterator& it, std::string_view::iterator& end) 
   return progn;
 }
 
-Obj* Vault::readCode(std::string_view code) {
-  std::string_view::iterator it = code.begin();
-  std::string_view::iterator end = code.end();
+Obj* Vault::readCode(std::string code) {
+  std::string::iterator it = code.begin();
+  std::string::iterator end = code.end();
   return readProgn(it, end);
 }

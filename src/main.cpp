@@ -17,7 +17,7 @@ Vault::Status repl() {
   auto* env = Vault::newStdEnv(); 
 
   while (true) {
-    std::cout << "> ";
+    std::cout << VAULT_PROMPT;
     const auto line = readInput();
     if (line == "q") break; 
     if (line == "(quit)") break;
@@ -30,8 +30,15 @@ Vault::Status repl() {
   return Vault::Status::SUCCESS;
 }
 
+void runScript(Obj* env, const std::string& path) { 
+  auto code = readFile(path);
+  auto* progn = Vault::readCode(code);
+  Vault::eval(env, progn);
+}
+
 int main(const int num_args, const char* args[]) { 
   if (num_args == 1) { return repl(); }
-
+  auto* env = newStdEnv();
+  runScript(env, args[1]); 
   return EXIT_SUCCESS;
 }

@@ -67,8 +67,8 @@ namespace Vault {
     }
   }
 
-  Tok readToken(std::string_view::iterator &it, std::string_view::iterator &end);
-  Tok peakToken(std::string_view::iterator &it, std::string_view::iterator &end);
+  Tok readToken(std::string::iterator &it, std::string::iterator &end);
+  Tok peakToken(std::string::iterator &it, std::string::iterator &end);
 
-  Obj* readCode(std::string_view code);
+  Obj* readCode(std::string code);
 }

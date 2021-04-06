@@ -4,6 +4,8 @@
 #include <iostream>
 #include <sstream>
 #include <string> 
+#include <fstream>
+#include <streambuf>
 
 #define VAULT_VERSION_MAJOR "0"
 #define VAULT_VERSION_MINOR "0"
@@ -50,3 +52,5 @@ inline std::string readInput() {
   std::getline(std::cin, result); 
   return result;
 }
+
+std::string readFile(const std::string& path);

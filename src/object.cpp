@@ -115,11 +115,11 @@ Obj* Vault::newBool(Bool flag) {
 
 Obj* Vault::newStr(const std::string &atom) { 
   Obj* obj = Vault::alloc<Obj>();
-  obj->type = Vault::ValueType::ATOM; 
+  obj->type = Vault::ValueType::STR; 
   obj->val.atom.data = Vault::alloc<char>(atom.length());
   obj->val.atom.len = atom.length();
   for(size_t i = 0; i < atom.length(); i++)
-    obj->val.atom.data[i] += atom[i];
+    obj->val.atom.data[i] = atom[i];
   return obj;
 } 
 
@@ -142,6 +142,16 @@ Obj* Vault::newCFun(CFun lambda) {
   obj->type = ValueType::CFUNC;
   obj->val.cfun = lambda;
   return obj;
+}
+
+Obj* Vault::newFun(Obj* env, Obj* name, Obj* params, Obj* progn) {
+  Obj* obj = Vault::alloc<Obj>();
+  obj->type = ValueType::FUNC;
+  obj->val.fun.capturedEnv = env;
+  obj->val.fun.name = name;
+  obj->val.fun.params = params;
+  obj->val.fun.progn = progn; 
+  return obj; 
 }
 
 Obj* Vault::newEnv(){
@@ -193,7 +203,7 @@ Obj* Vault::Obj::get(int index) {
   }
 
   // TODO(Dustin): We should have our own null type
-  return NULL;
+  return newUnit();
 }
 
 std::string_view Vault::Obj::toStrView() const {
@@ -219,8 +229,8 @@ bool Vault::cmp(Obj* a, Obj* b) {
     case ValueType::NUMBER: return a->asNum() == b->asNum();
     case ValueType::STR:
     case ValueType::ATOM: return
-      a->asAtom().len == b->asAtom().len 
-      && strncmp(a->asAtom().data, b->asAtom().data, a->asAtom().len) == 0;
+      a->val.atom.len == b->val.atom.len 
+      && strncmp(a->val.atom.data, b->val.atom.data, a->val.atom.len) == 0;
     case ValueType::BOOL: return a->asBool() == b->asBool();
     default: 
       assert(0);
@@ -280,3 +290,9 @@ Obj* Vault::cdr(Obj* list){ return list->val.list.next; }
 
 Obj* Vault::fst(Obj* list) { return list->val.list.a; } 
 Obj* Vault::snd(Obj* list) { return list->val.list.b; } 
+
+Obj* Vault::shift(Obj* &list){
+  auto* v = list->val.list.slot;
+  list = list->val.list.next;
+  return v;
+}

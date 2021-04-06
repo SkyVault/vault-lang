@@ -7,6 +7,18 @@ Obj* invoke(Obj* env, Obj* callable, Obj* args) {
 
   if (callable->type == ValueType::CFUNC) {
     return callable->val.cfun(env, args);
+  } else if (callable->type == ValueType::FUNC) {
+    auto params = callable->val.fun.params;
+    auto progn = callable->val.fun.progn;
+    auto env = callable->val.fun.capturedEnv;
+
+    auto it = params;
+    while (it && it->val.list.slot) {
+      putInEnv(env, it->val.list.slot, shift(args));
+      it = it->val.list.next;
+    }
+
+    return eval(env, progn);
   } else {
     std::cout << "Can't evaluate function: " << callable << std::endl;
     return newUnit();
@@ -41,12 +53,13 @@ Obj* evalExpr(Obj* env, Obj* obj) {
     }
 
     case ValueType::PROGN: {
+      auto ret = newUnit();
       auto it = obj;
       while (it) {
-        it->asList().slot = evalExpr(env, it->asList().slot);
+        ret = evalExpr(env, it->asList().slot);
         it = it->asList().next;
       }
-      return obj;
+      return ret;
     }
     default: {
       std::cout << "Unhandled expr type in evalExpr: " << ValueTypeS[obj->type] << std::endl;
