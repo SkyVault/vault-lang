@@ -156,34 +156,40 @@ Obj* Vault::newFun(Obj* env, Obj* name, Obj* params, Obj* progn) {
 
 Obj* Vault::newEnv(){
   auto list = newList(); 
+  list->val.list.slot = newList();
   return list;
 }
 
-Obj* findPairInEnv(Obj* env, Obj* atom) { 
-  const size_t envSize = Vault::len(env);
-  for(int i = envSize - 1; i >= 0; i--) {
-    auto* pair = env->get(i);
-    if (cmp(fst(pair), atom)) {
-      return pair;
+Obj* findPairInScope(Obj* scope, Obj* atom) { 
+  auto it = scope;
+  while (it) { 
+    if (cmp(fst(it->val.list.slot), atom)) {
+      return it->val.list.slot;
     }
+    it = it->val.list.next;
   }
   return NULL;
 }
 
 Obj* Vault::findInEnv(Obj* env, Obj* atom){
-  auto p = findPairInEnv(env, atom);
-  if (!p) return newUnit();
-  return snd(p);
+  auto* it = env;
+  while (it) {
+    auto i = findPairInScope(shift(it), atom);
+    if (i) { return snd(i); }
+  }
+  return NULL;
 }
 
 Obj* Vault::putInEnv(Obj* env, Obj* atom, Obj* value) {
-  auto exists = findPairInEnv(env, atom);
-  if (exists) { exists->val.list.b = value; return value; }
-  push(env, newPair(atom, value));
+  push(env->val.list.slot, newPair(atom, value));
   return value;
 }
 
-Obj* Vault::pushEnv(Obj* env){
+Obj* Vault::pushScope(Obj* env) {
+  Obj* top = newEnv();
+}
+
+Obj* Vault::popScope(Obj* env) {
 
 }
 
@@ -199,10 +205,9 @@ Obj* Vault::Obj::get(int index) {
   }
 
   if (index >= 0) {
-    return it->asList().slot;
+    return it->val.list.slot;
   }
 
-  // TODO(Dustin): We should have our own null type
   return newUnit();
 }
 
@@ -241,7 +246,7 @@ bool Vault::cmp(Obj* a, Obj* b) {
 size_t Vault::len(Obj* list) {
   auto it = list;
   int i = 0;
-  while (it) {
+  while (it && it->val.list.slot) {
     i+=1;
     it = it->asList().next;
   }
@@ -288,11 +293,24 @@ Obj* Vault::cons(Obj* value, Obj* list) {
 Obj* Vault::car(Obj* list){ return list->val.list.slot; }
 Obj* Vault::cdr(Obj* list){ return list->val.list.next; }
 
-Obj* Vault::fst(Obj* list) { return list->val.list.a; } 
-Obj* Vault::snd(Obj* list) { return list->val.list.b; } 
+Obj* Vault::fst(const Obj* list) { return list->val.list.a; } 
+Obj* Vault::snd(const Obj* list) { return list->val.list.b; } 
 
 Obj* Vault::shift(Obj* &list){
   auto* v = list->val.list.slot;
   list = list->val.list.next;
   return v;
+}
+
+
+void Vault::printEnv(Obj* env) {
+  auto scope = env;
+  int scopeIndex = 0;
+
+  while (scope && scope->val.list.slot) { 
+    std::cout << "--- SCOPE " << scopeIndex << " ---\n"; 
+    std::cout << scope->val.list.slot << std::endl;
+    scopeIndex++;
+    scope = scope->val.list.next;
+  }
 }

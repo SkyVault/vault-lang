@@ -95,7 +95,11 @@ namespace Vault {
     friend std::ostream& operator<<(std::ostream& os, const Obj* obj);
   };
 
+  Obj* fst(const Obj* list);
+  Obj* snd(const Obj* list);
+
   inline std::ostream& operator<<(std::ostream& os, const Obj* obj) {
+    if (!obj) return os;
     switch(obj->type) {
       case ValueType::UNIT: { os << "()"; break; }
       case ValueType::ATOM: { os << obj->toStrView(); break; }
@@ -116,12 +120,22 @@ namespace Vault {
         break;
       }
 
+      case ValueType::PAIR: {
+        std::cout << "[" << fst(obj) << " " << snd(obj) << "]";
+        break;
+      }
+
       case ValueType::CFUNC: {
         std::cout << "<cfun>";
         break;
       }
 
-      default: std::cout << "<unknown>"; break;
+      case ValueType::FUNC: {
+        std::cout << "<fun:" << obj->val.fun.name << ">";
+        break;
+      }
+
+      default: std::cout << "<unknown: " << ValueTypeS[obj->type] << ">"; break;
     }
   }
 
@@ -139,7 +153,9 @@ namespace Vault {
 
   Obj* findInEnv(Obj* env, Obj* atom);
   Obj* putInEnv(Obj* env, Obj* atom, Obj* value);
-  Obj* pushEnv(Obj* env);
+
+  Obj* pushScope(Obj* env);
+  Obj* popScope(Obj* env);
 
   static Obj* newUnit() {
     static Obj unit = {}; 
@@ -162,10 +178,9 @@ namespace Vault {
 
   Obj* shift(Obj* &list); // Pops off the top
 
-  Obj* fst(Obj* list);
-  Obj* snd(Obj* list);
-
   void freeObj(Obj* obj); 
   Obj* ref(Obj* obj);
   void deRef(Obj* obj);
+
+  void printEnv(Obj* env);
 }

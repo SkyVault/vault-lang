@@ -26,11 +26,11 @@ Obj* println(Obj* env, Obj* args) {
 Obj* Vault::newStdEnv() {
   auto env = newEnv();
 
-  push(env, newPair(newAtom("pi"), newCFun([](Obj* env, Obj* args){ 
+  putInEnv(env, newAtom("pi"), newCFun([](Obj* env, Obj* args){ 
     return newNum(3.1415926);
-  }))); 
+  })); 
 
-  push(env, newPair(newAtom("+"), newCFun([](Obj* env, Obj* args){ 
+  putInEnv(env, newAtom("+"), newCFun([](Obj* env, Obj* args){ 
     auto result = 0.0;
     auto it = args;
     while (it) {
@@ -38,9 +38,9 @@ Obj* Vault::newStdEnv() {
       it = it->asList().next;
     }
     return newNum(result);
-  }))); 
+  })); 
 
-  push(env, newPair(newAtom("*"), newCFun([](Obj* env, Obj* args){ 
+  putInEnv(env, newAtom("*"), newCFun([](Obj* env, Obj* args){ 
     auto result = 1.0;
     auto it = args;
     while (it) {
@@ -48,9 +48,9 @@ Obj* Vault::newStdEnv() {
       it = it->asList().next;
     }
     return newNum(result);
-  }))); 
+  })); 
 
-  push(env, newPair(newAtom("-"), newCFun([](Obj* env, Obj* args){ 
+  putInEnv(env, newAtom("-"), newCFun([](Obj* env, Obj* args){ 
     auto result = 0.0;
     auto it = args;
     auto fst = true;
@@ -62,9 +62,9 @@ Obj* Vault::newStdEnv() {
       it = it->asList().next;
     }
     return newNum(result);
-  }))); 
+  })); 
 
-  push(env, newPair(newAtom("/"), newCFun([](Obj* env, Obj* args){ 
+  putInEnv(env, newAtom("/"), newCFun([](Obj* env, Obj* args){ 
     auto result = 0.0;
     auto it = args;
     auto fst = true;
@@ -76,25 +76,46 @@ Obj* Vault::newStdEnv() {
       it = it->asList().next;
     }
     return newNum(result);
-  }))); 
+  })); 
 
-  push(env, newPair(newAtom("eq"), newCFun([](Obj* env, Obj* args){ 
+  putInEnv(env, newAtom("="), newCFun([](Obj* env, Obj* args){ 
     return newBool(cmp(eval(env, args->get(0)), eval(env, args->get(1))));
-  })));
+  }));
 
-  push(env, newPair(newAtom("neq"), newCFun([](Obj* env, Obj* args){ 
+  putInEnv(env, newAtom("<"), newCFun([](Obj* env, Obj* args){ 
+    return newBool(eval(env, args->get(0))->val.num < eval(env, args->get(1))->val.num);
+  }));
+
+  putInEnv(env, newAtom(">"), newCFun([](Obj* env, Obj* args){ 
+    return newBool(eval(env, args->get(0))->val.num > eval(env, args->get(1))->val.num);
+  }));
+
+  putInEnv(env, newAtom("<="), newCFun([](Obj* env, Obj* args){ 
+    return newBool(eval(env, args->get(0))->val.num <= eval(env, args->get(1))->val.num);
+  }));
+
+  putInEnv(env, newAtom(">="), newCFun([](Obj* env, Obj* args){ 
+    return newBool(eval(env, args->get(0))->val.num >= eval(env, args->get(1))->val.num);
+  }));
+
+  putInEnv(env, newAtom("~="), newCFun([](Obj* env, Obj* args){ 
     return newBool(!cmp(eval(env, args->get(0)), eval(env, args->get(1))));
-  })));
+  }));
 
-  push(env, newPair(newAtom("not"), newCFun([](Obj* env, Obj* args){ 
+  putInEnv(env, newAtom("not"), newCFun([](Obj* env, Obj* args){ 
     return newBool(!eval(env, args->get(0))->asBool());
-  })));
+  }));
 
-  push(env, newPair(newAtom("set"), newCFun([](Obj* env, Obj* args){
+  putInEnv(env, newAtom("set"), newCFun([](Obj* env, Obj* args){
     return putInEnv(env, args->get(0), eval(env, args->get(1)));
-  }))); 
+  })); 
 
-  push(env, newPair(newAtom("defun"), newCFun([](Obj* env, Obj* args){ 
+  putInEnv(env, newAtom("progn"), newCFun([](Obj* env, Obj* args){ 
+    args->type = ValueType::PROGN;
+    return eval(env, args);
+  }));
+
+  putInEnv(env, newAtom("defun"), newCFun([](Obj* env, Obj* args){ 
     Obj* name = shift(args);
     Obj* params = shift(args);
 
@@ -103,7 +124,6 @@ Obj* Vault::newStdEnv() {
     auto it = params;
     while (it && it->val.list.slot) { 
       assert(it->val.list.slot->type == ValueType::ATOM);
-      std::cout << "-> " << it->val.list.slot << std::endl;
       it = it->val.list.next;
     }
 
@@ -112,24 +132,31 @@ Obj* Vault::newStdEnv() {
 
     auto* fn = newFun(env, name, params, progn);
     putInEnv(env, name, fn);
-    return fn;
-  }))); 
 
-  push(env, newPair(newAtom("if"), newCFun([](Obj* env, Obj* args){
+    return fn;
+  })); 
+
+  putInEnv(env, newAtom("if"), newCFun([](Obj* env, Obj* args){
+    const auto len = Vault::len(args);
     auto* comp = eval(env, args->get(0));
-    auto* f = args->get(2);
     if (Vault::isTrue(comp)) 
       return eval(env, args->get(1));
-    else if (f && f->type != ValueType::UNIT) 
-      return eval(env, f); 
-  }))); 
 
-  push(env, newPair(newAtom("readln"), newCFun([](Obj* env, Obj* args){
+    if (len > 2) {
+      auto* f = args->get(2);
+      if (f && f->type != ValueType::UNIT) 
+        return eval(env, f); 
+    }
+
+    return newUnit();
+  })); 
+
+  putInEnv(env, newAtom("readln"), newCFun([](Obj* env, Obj* args){
     return newStr(readInput());
-  })));
+  }));
 
-  push(env, newPair(newAtom("print"), newCFun(print))); 
-  push(env, newPair(newAtom("println"), newCFun(println))); 
+  putInEnv(env, newAtom("print"), newCFun(print)); 
+  putInEnv(env, newAtom("println"), newCFun(println)); 
 
   return env;
 }

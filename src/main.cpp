@@ -23,7 +23,7 @@ Vault::Status repl() {
     if (line == "(quit)") break;
     auto* progn = Vault::readCode(line);
     auto* result = Vault::eval(env, progn);
-    std::cout << result->get(0) << std::endl;
+    std::cout << "result:" << result->get(0) << std::endl;
     deRef(progn);
   }
 
@@ -33,12 +33,15 @@ Vault::Status repl() {
 void runScript(Obj* env, const std::string& path) { 
   auto code = readFile(path);
   auto* progn = Vault::readCode(code);
-  Vault::eval(env, progn);
+  auto* result = Vault::eval(env, progn); 
+  std::cout << "returned:\n" << result << std::endl;
 }
 
 int main(const int num_args, const char* args[]) { 
   if (num_args == 1) { return repl(); }
+
   auto* env = newStdEnv();
   runScript(env, args[1]); 
+
   return EXIT_SUCCESS;
 }
