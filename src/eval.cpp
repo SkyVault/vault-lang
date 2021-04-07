@@ -10,15 +10,17 @@ Obj* invoke(Obj* env, Obj* callable, Obj* args) {
   } else if (callable->type == ValueType::FUNC) {
     auto params = callable->val.fun.params;
     auto progn = callable->val.fun.progn;
-    auto env = callable->val.fun.capturedEnv;
+
+    Obj* newEnv = cons(newList(), env);
 
     auto it = params;
     while (it && it->val.list.slot) {
-      putInEnv(env, it->val.list.slot, shift(args));
+      auto v = eval(newEnv, shift(args));
+      putInEnv(newEnv, it->val.list.slot, v);
       it = it->val.list.next;
     }
 
-    return eval(env, progn);
+    return eval(newEnv, progn);
   } else {
     std::cout << "Can't evaluate function: " << callable << std::endl;
     return newUnit();

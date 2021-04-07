@@ -98,6 +98,8 @@ namespace Vault {
   Obj* fst(const Obj* list);
   Obj* snd(const Obj* list);
 
+  void printObj(Obj* obj);
+
   inline std::ostream& operator<<(std::ostream& os, const Obj* obj) {
     if (!obj) return os;
     switch(obj->type) {

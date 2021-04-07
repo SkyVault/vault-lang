@@ -158,5 +158,10 @@ Obj* Vault::newStdEnv() {
   putInEnv(env, newAtom("print"), newCFun(print)); 
   putInEnv(env, newAtom("println"), newCFun(println)); 
 
+  putInEnv(env, newAtom("printenv"), newCFun([](Obj* env, Obj* args){
+    printEnv(env);
+    return env;
+  }));
+
   return env;
 }

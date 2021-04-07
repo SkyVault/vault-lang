@@ -162,7 +162,7 @@ Obj* Vault::newEnv(){
 
 Obj* findPairInScope(Obj* scope, Obj* atom) { 
   auto it = scope;
-  while (it) { 
+  while (it && it->val.list.slot) { 
     if (cmp(fst(it->val.list.slot), atom)) {
       return it->val.list.slot;
     }
@@ -173,9 +173,11 @@ Obj* findPairInScope(Obj* scope, Obj* atom) {
 
 Obj* Vault::findInEnv(Obj* env, Obj* atom){
   auto* it = env;
-  while (it) {
-    auto i = findPairInScope(shift(it), atom);
+  while (it && it->val.list.slot) {
+    auto item = it->val.list.slot;
+    auto i = findPairInScope(item, atom);
     if (i) { return snd(i); }
+    it = it->val.list.next;
   }
   return NULL;
 }
@@ -285,8 +287,8 @@ void Vault::each(Obj* list, std::function<void(Obj*)> fn) {
 
 Obj* Vault::cons(Obj* value, Obj* list) {
   auto* head = newList();
-  head->asList().next = list;
-  head->asList().slot = value;
+  head->val.list.next = list;
+  head->val.list.slot = value;
   return head;
 }
 
@@ -302,6 +304,9 @@ Obj* Vault::shift(Obj* &list){
   return v;
 }
 
+void Vault::printObj(Obj* obj) {
+  std::cout << obj << std::endl;
+}
 
 void Vault::printEnv(Obj* env) {
   auto scope = env;

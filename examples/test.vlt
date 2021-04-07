@@ -1,4 +1,6 @@
-(if #t
-  (progn (println "1")
-         (println "2")
-         (println "3"))))
+(defun fact (n)
+  (if (< n 2)
+    1
+    (* n (fact (- n 1))))) 
+
+(println (fact 10))

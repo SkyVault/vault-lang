@@ -34,7 +34,7 @@ void runScript(Obj* env, const std::string& path) {
   auto code = readFile(path);
   auto* progn = Vault::readCode(code);
   auto* result = Vault::eval(env, progn); 
-  std::cout << "returned:\n" << result << std::endl;
+  std::cout << "\nreturned:\n" << result << std::endl;
 }
 
 int main(const int num_args, const char* args[]) { 
