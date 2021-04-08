@@ -85,18 +85,20 @@ void Vault::deRef(Obj *obj) {
   }
 }
 
-Obj* Vault::newPair(Obj* a, Obj* b) { 
+Obj* Vault::newPair(Obj* a, Obj* b, bool quoted) { 
   Obj* obj = Vault::alloc<Obj>();
+  if (quoted) obj->flags |= Flags::QUOTED;
   obj->type = Vault::ValueType::PAIR;
   obj->val.list.slot = a;
   obj->val.list.next = b;
   return obj;
 }
 
-Obj* Vault::newList() {
-  auto* list = newPair(NULL, NULL);
-  list->type = Vault::ValueType::LIST;
-  return list;
+Obj* Vault::newList(bool quoted) {
+  auto* obj = newPair(NULL, NULL);
+  if (quoted) obj->flags |= Flags::QUOTED;
+  obj->type = Vault::ValueType::LIST;
+  return obj;
 }
 
 Obj* Vault::newNum(Number number) {
@@ -123,14 +125,16 @@ Obj* Vault::newStr(const std::string &atom) {
   return obj;
 } 
 
-Obj* Vault::newAtom(const std::string &atom) { 
-  auto* self = newStr(atom);
-  self->type = Vault::ValueType::ATOM;
-  return self;
+Obj* Vault::newAtom(const std::string &atom, bool quoted) { 
+  auto* obj = newStr(atom);
+  if (quoted) obj->flags |= Flags::QUOTED;
+  obj->type = Vault::ValueType::ATOM;
+  return obj;
 }
 
-Obj* Vault::newProgn() {
+Obj* Vault::newProgn(bool quoted) {
   Obj* obj = Vault::alloc<Obj>();
+  if (quoted) obj->flags |= Flags::QUOTED;
   obj->type = Vault::ValueType::PROGN; 
   obj->val.list.next = NULL;
   obj->val.list.slot = NULL;
@@ -144,8 +148,9 @@ Obj* Vault::newCFun(CFun lambda) {
   return obj;
 }
 
-Obj* Vault::newFun(Obj* env, Obj* name, Obj* params, Obj* progn) {
+Obj* Vault::newFun(Obj* env, Obj* name, Obj* params, Obj* progn, bool quoted) {
   Obj* obj = Vault::alloc<Obj>();
+  if (quoted) obj->flags |= Flags::QUOTED;
   obj->type = ValueType::FUNC;
   obj->val.fun.capturedEnv = env;
   obj->val.fun.name = name;
@@ -155,9 +160,9 @@ Obj* Vault::newFun(Obj* env, Obj* name, Obj* params, Obj* progn) {
 }
 
 Obj* Vault::newEnv(){
-  auto list = newList(); 
-  list->val.list.slot = newList();
-  return list;
+  auto* obj = newList(); 
+  obj ->val.list.slot = newList();
+  return obj;
 }
 
 Obj* findPairInScope(Obj* scope, Obj* atom) { 
@@ -185,6 +190,18 @@ Obj* Vault::findInEnv(Obj* env, Obj* atom){
 Obj* Vault::putInEnv(Obj* env, Obj* atom, Obj* value) {
   push(env->val.list.slot, newPair(atom, value));
   return value;
+}
+
+Obj* Vault::putOrUpdateInEnv(Obj* env, Obj* atom, Obj* value){ 
+  auto* top = env->val.list.slot;
+  auto* pair = findPairInScope(top, atom);
+
+  if (pair) {
+    pair->val.list.b = value; 
+    return value;
+  } else {
+    return putInEnv(env, atom, value);
+  }
 }
 
 Obj* Vault::pushScope(Obj* env) {

@@ -76,6 +76,11 @@ Tok Vault::readToken(std::string::iterator& it, std::string::iterator& end) {
     return Tok{ TokType::TOK_CLOSE_PAREN, ")" }; 
   }
 
+  if (*it == '\'') {
+    it += 1;
+    return Tok{TokType::TOK_QUOTE, "'"};
+  }
+
   if (*it == '\"') {
     it++;
     start = it;
@@ -97,14 +102,20 @@ Tok Vault::readToken(std::string::iterator& it, std::string::iterator& end) {
 Obj* readExpr(std::string::iterator& it, std::string::iterator& end) {
   auto tok = readToken(it, end);
 
+  bool quoted = false;
+  if (tok.type == TokType::TOK_QUOTE) {
+    quoted = true;
+    tok = readToken(it, end);
+  }
+
   switch(tok.type){
     case TokType::TOK_NUM_LIT: return newNum(std::stod(tok.lexeme));
-    case TokType::TOK_ATOM_LIT: return newAtom(tok.lexeme);
+    case TokType::TOK_ATOM_LIT: return newAtom(tok.lexeme, quoted);
     case TokType::TOK_BOOL_LIT: return newBool(tok.lexeme == "t");
     case TokType::TOK_STR_LIT: return newStr(tok.lexeme);
 
     case TokType::TOK_OPEN_PAREN: {
-      auto* list = newList();
+      auto* list = newList(quoted);
 
       while (it != end) {
         auto* item = readExpr(it, end);

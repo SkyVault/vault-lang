@@ -18,6 +18,7 @@
   GEN(TOK_BOOL_LIT)     \
   GEN(TOK_OPEN_PAREN)   \
   GEN(TOK_CLOSE_PAREN)  \
+  GEN(TOK_QUOTE)        \
   GEN(NUM_TOK_TYPE)
 
 namespace Vault {

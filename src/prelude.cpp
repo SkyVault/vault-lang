@@ -107,7 +107,7 @@ Obj* Vault::newStdEnv() {
   }));
 
   putInEnv(env, newAtom("set"), newCFun([](Obj* env, Obj* args){
-    return putInEnv(env, args->get(0), eval(env, args->get(1)));
+    return putOrUpdateInEnv(env, args->get(0), eval(env, args->get(1)));
   })); 
 
   putInEnv(env, newAtom("progn"), newCFun([](Obj* env, Obj* args){ 
@@ -116,8 +116,15 @@ Obj* Vault::newStdEnv() {
   }));
 
   putInEnv(env, newAtom("defun"), newCFun([](Obj* env, Obj* args){ 
-    Obj* name = shift(args);
-    Obj* params = shift(args);
+    Obj* name = shift(args); 
+    Obj* params = NULL;
+
+    if (name->type != ValueType::ATOM) {
+      params = name;
+      name = newAtom("anon");
+    } else {
+      params = shift(args);
+    }
 
     assert(params->type == ValueType::LIST);
 
@@ -140,12 +147,12 @@ Obj* Vault::newStdEnv() {
     const auto len = Vault::len(args);
     auto* comp = eval(env, args->get(0));
     if (Vault::isTrue(comp)) 
-      return eval(env, args->get(1));
+      return eval(cons(newList(), env), args->get(1));
 
     if (len > 2) {
       auto* f = args->get(2);
       if (f && f->type != ValueType::UNIT) 
-        return eval(env, f); 
+        return eval(cons(newList(), env), f); 
     }
 
     return newUnit();
@@ -164,8 +171,13 @@ Obj* Vault::newStdEnv() {
   }));
 
   putInEnv(env, newAtom("list"), newCFun([](Obj* env, Obj* args){
+    if (Vault::len(args) == 0) return newList();
     args->type = ValueType::LIST;
     return args;
+  }));
+
+  putInEnv(env, newAtom("len"), newCFun([](Obj* env, Obj* args){
+    return newNum(Vault::len(eval(env, shift(args))));
   }));
 
   putInEnv(env, newAtom("cons"), newCFun([](Obj* env, Obj* args){
@@ -199,7 +211,7 @@ Obj* Vault::newStdEnv() {
     }
 
     return eval(newEnv, args); 
-  })); 
+  }));
 
   return env;
 }

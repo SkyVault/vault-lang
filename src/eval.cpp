@@ -30,6 +30,8 @@ Obj* invoke(Obj* env, Obj* callable, Obj* args) {
 }
 
 Obj* evalExpr(Obj* env, Obj* obj) {
+  if (!obj) return newUnit();
+  if (obj->flags & Vault::Flags::QUOTED) return obj;
   switch(obj->type) {
     case ValueType::UNIT:
     case ValueType::BOOL:
@@ -58,9 +60,8 @@ Obj* evalExpr(Obj* env, Obj* obj) {
     case ValueType::PROGN: {
       auto ret = newUnit();
       auto it = obj;
-      auto newEnv = cons(newList(), env);
       while (it) {
-        ret = evalExpr(newEnv, it->asList().slot);
+        ret = evalExpr(env, it->asList().slot);
         it = it->asList().next;
       }
       return ret;

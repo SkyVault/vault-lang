@@ -58,6 +58,11 @@ namespace Vault {
 
   typedef Obj*(*CFun)(Obj*, Obj*);
 
+  enum Flags {
+    NONE = 1 << 0,
+    QUOTED = 1 << 1,
+  };
+
   struct Fun {
     Obj* capturedEnv;
     Obj* name;
@@ -81,6 +86,7 @@ namespace Vault {
     Val val;
 
     int ref{0};
+    unsigned int flags{0};
 
     Str asAtom();
     Number asNum();
@@ -141,20 +147,21 @@ namespace Vault {
     }
   }
 
-  Obj* newList();
+  Obj* newList(bool quoted=false);
   Obj* newNum(Number number=0.0);
   Obj* newBool(Bool flag=false);
   Obj* newStr(const std::string &str="");
-  Obj* newAtom(const std::string &atom="");
-  Obj* newProgn(); 
-  Obj* newPair(Obj* a=NULL, Obj* b=NULL);
+  Obj* newAtom(const std::string &atom="", bool quoted=false);
+  Obj* newProgn(bool quoted=false); 
+  Obj* newPair(Obj* a=NULL, Obj* b=NULL, bool quoted=false);
   Obj* newCFun(CFun lambda);
-  Obj* newFun(Obj* env, Obj* name, Obj* params, Obj* progn);
+  Obj* newFun(Obj* env, Obj* name, Obj* params, Obj* progn, bool quoted=false);
 
   Obj* newEnv();
 
   Obj* findInEnv(Obj* env, Obj* atom);
   Obj* putInEnv(Obj* env, Obj* atom, Obj* value);
+  Obj* putOrUpdateInEnv(Obj* env, Obj* atom, Obj* value);
 
   Obj* pushScope(Obj* env);
   Obj* popScope(Obj* env);

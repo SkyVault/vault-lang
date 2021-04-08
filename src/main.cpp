@@ -23,7 +23,7 @@ Vault::Status repl() {
     if (line == "(quit)") break;
     auto* progn = Vault::readCode(line);
     auto* result = Vault::eval(env, progn);
-    std::cout << "result:" << result->get(0) << std::endl;
+    std::cout << result << std::endl;
     deRef(progn);
   }
 
