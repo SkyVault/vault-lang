@@ -163,5 +163,43 @@ Obj* Vault::newStdEnv() {
     return env;
   }));
 
+  putInEnv(env, newAtom("list"), newCFun([](Obj* env, Obj* args){
+    args->type = ValueType::LIST;
+    return args;
+  }));
+
+  putInEnv(env, newAtom("cons"), newCFun([](Obj* env, Obj* args){
+    auto* a = eval(env, shift(args));
+    auto* b = eval(env, shift(args));
+    return cons(a, b);
+  }));
+
+  putInEnv(env, newAtom("car"), newCFun([](Obj* env, Obj* args){
+    return car(eval(env, shift(args)));
+  }));
+
+  putInEnv(env, newAtom("cdr"), newCFun([](Obj* env, Obj* args){
+    return cdr(eval(env, shift(args)));
+  }));
+
+  putInEnv(env, newAtom("let"), newCFun([](Obj* env, Obj* args){
+    auto* bindings = shift(args);
+    assert(bindings->type == ValueType::LIST);
+    args->type = ValueType::PROGN;
+
+    auto* newEnv = cons(newList(), env);
+    auto* it = bindings;
+    while (it) {
+      auto* atom = it->val.list.slot; 
+      assert(atom->type == ValueType::ATOM);
+      it = it->val.list.next;
+      auto* val = eval(newEnv, it->val.list.slot); 
+      putInEnv(newEnv, atom, val);
+      it = it->val.list.next;
+    }
+
+    return eval(newEnv, args); 
+  })); 
+
   return env;
 }

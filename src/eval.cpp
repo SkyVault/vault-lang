@@ -41,6 +41,7 @@ Obj* evalExpr(Obj* env, Obj* obj) {
       auto* atom = findInEnv(env, obj);
       if (!atom || atom->type == ValueType::UNIT) {
         std::cout << "Cannot find '" << obj << "' in the environment" << std::endl;
+        return newUnit();
       }
       return atom;
     }
@@ -57,8 +58,9 @@ Obj* evalExpr(Obj* env, Obj* obj) {
     case ValueType::PROGN: {
       auto ret = newUnit();
       auto it = obj;
+      auto newEnv = cons(newList(), env);
       while (it) {
-        ret = evalExpr(env, it->asList().slot);
+        ret = evalExpr(newEnv, it->asList().slot);
         it = it->asList().next;
       }
       return ret;
