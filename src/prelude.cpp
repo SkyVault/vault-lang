@@ -106,8 +106,25 @@ Obj* Vault::newStdEnv() {
     return newBool(!eval(env, args->get(0))->asBool());
   }));
 
+  putInEnv(env, newAtom("def"), newCFun([](Obj* env, Obj* args){ 
+    auto* atom = shift(args);
+    auto* value = eval(env, shift(args));
+
+    if (!putInEnvUnique(env, atom, value)) {
+      std::cout << "Error: the variable '" << atom << "' already exists in scope." << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
+
+    return value;
+  }));
+
   putInEnv(env, newAtom("set"), newCFun([](Obj* env, Obj* args){
-    return putOrUpdateInEnv(env, args->get(0), eval(env, args->get(1)));
+    auto v = updateInEnv(env, args->get(0), eval(env, args->get(1)));
+    if (!v) {
+      std::cout << "Cannot find " << args->get(0) << " in scope" << std::endl;
+      std::exit(0);
+    }
+    return v;
   })); 
 
   putInEnv(env, newAtom("progn"), newCFun([](Obj* env, Obj* args){ 
@@ -158,6 +175,18 @@ Obj* Vault::newStdEnv() {
     return newUnit();
   })); 
 
+  putInEnv(env, newAtom("while"), newCFun([](Obj* env, Obj* args){
+    auto* expr = shift(args);
+    auto* body = shift(args);
+
+    auto* newEnv = cons(newList(), env);
+    while (isTrue(eval(env, expr))){
+      eval(newEnv, body);
+    }
+
+    return newUnit();
+  }));
+
   putInEnv(env, newAtom("readln"), newCFun([](Obj* env, Obj* args){
     return newStr(readInput());
   }));
@@ -197,8 +226,7 @@ Obj* Vault::newStdEnv() {
   putInEnv(env, newAtom("let"), newCFun([](Obj* env, Obj* args){
     auto* bindings = shift(args);
     assert(bindings->type == ValueType::LIST);
-    args->type = ValueType::PROGN;
-
+    args->type = ValueType::PROGN; 
     auto* newEnv = cons(newList(), env);
     auto* it = bindings;
     while (it) {
@@ -208,10 +236,19 @@ Obj* Vault::newStdEnv() {
       auto* val = eval(newEnv, it->val.list.slot); 
       putInEnv(newEnv, atom, val);
       it = it->val.list.next;
-    }
-
+    } 
     return eval(newEnv, args); 
   }));
 
+
+  putInEnv(env, newAtom("init-ansi-term-env"), newCFun([](Obj* env, Obj* args){
+    initAnsiTerm(env);
+    return newUnit();
+  }));
+
   return env;
+}
+
+void Vault::initAnsiTerm(Obj* env) {
+
 }

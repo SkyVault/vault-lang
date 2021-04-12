@@ -6,4 +6,4 @@ std::string readFile(const std::string& path) {
     std::istreambuf_iterator<char>(f),
     std::istreambuf_iterator<char>()
   );
-}
+} 

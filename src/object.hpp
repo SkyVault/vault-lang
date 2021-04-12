@@ -161,7 +161,9 @@ namespace Vault {
 
   Obj* findInEnv(Obj* env, Obj* atom);
   Obj* putInEnv(Obj* env, Obj* atom, Obj* value);
+  Obj* putInEnvUnique(Obj* env, Obj* atom, Obj* value);
   Obj* putOrUpdateInEnv(Obj* env, Obj* atom, Obj* value);
+  Obj* updateInEnv(Obj* env, Obj* atom, Obj* value);
 
   Obj* pushScope(Obj* env);
   Obj* popScope(Obj* env);

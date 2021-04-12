@@ -1,6 +1,8 @@
 #include <iostream>
 #include <sstream>
+#include <fstream>
 #include <string>
+#include <filesystem>
 
 #include "vault.hpp"
 #include "gc.hpp" 
@@ -20,7 +22,6 @@ Vault::Status repl() {
     std::cout << VAULT_PROMPT;
     const auto line = readInput();
     if (line == "q") break; 
-    if (line == "(quit)") break;
     auto* progn = Vault::readCode(line);
     auto* result = Vault::eval(env, progn);
     std::cout << result << std::endl;
@@ -37,11 +38,36 @@ void runScript(Obj* env, const std::string& path) {
   std::cout << "\nreturned:\n" << result << std::endl;
 }
 
+using ArgsIter = std::vector<std::string>::iterator;
+
+void newProject(ArgsIter it, ArgsIter end) {
+  if (it == end) { std::cout << "Error: the new command expects an argument for the project name\n\tEx: vault new my-new-project\n"; return; }
+  it += 1;
+  if (it == end) { std::cout << "Error: the new command expects an argument for the project name\n\tEx: vault new my-new-project\n"; return; }
+  std::string projectName = *it; 
+
+  std::filesystem::create_directory(projectName); 
+  std::ofstream projectFile(projectName + "/" + projectName + ".conf.vlt");
+  std::ofstream entryFile(projectName + "/" + projectName + ".vlt");
+  projectFile << "";
+  entryFile << "";
+  projectFile.close();
+  entryFile.close();
+}
+
 int main(const int num_args, const char* args[]) { 
   if (num_args == 1) { return repl(); }
 
-  auto* env = newStdEnv();
-  runScript(env, args[1]); 
+  std::vector<std::string> pargs;
+  for (int i = 0; i < num_args; i++)
+    pargs.emplace_back(std::string{args[i]});
+
+  if (pargs[1] == "new") {
+    newProject(pargs.begin() + 1, pargs.end());
+  } else { 
+    auto* env = newStdEnv();
+    runScript(env, pargs[1]); 
+  }
 
   return EXIT_SUCCESS;
 }

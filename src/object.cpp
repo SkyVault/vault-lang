@@ -192,6 +192,27 @@ Obj* Vault::putInEnv(Obj* env, Obj* atom, Obj* value) {
   return value;
 }
 
+Obj* Vault::putInEnvUnique(Obj* env, Obj* atom, Obj* value) { 
+  auto* top = env->val.list.slot; 
+  auto* pair = findPairInScope(top, atom);
+  if (pair) { return NULL; }
+  return putInEnv(env, atom, value);
+}
+
+Obj* Vault::updateInEnv(Obj* env, Obj* atom, Obj* value) {
+  auto* it = env;
+  while (it && it->val.list.slot) {
+    auto item = it->val.list.slot;
+    auto i = findPairInScope(item, atom);
+    if (i) { 
+      i->val.list.b = value;
+      return value; 
+    }
+    it = it->val.list.next;
+  }
+  return NULL; 
+}
+
 Obj* Vault::putOrUpdateInEnv(Obj* env, Obj* atom, Obj* value){ 
   auto* top = env->val.list.slot;
   auto* pair = findPairInScope(top, atom);

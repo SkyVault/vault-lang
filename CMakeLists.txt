@@ -34,6 +34,8 @@ message(STATUS "Building ${CMAKE_BUILD_TYPE}")
 ########################################
 
 # Get packages
+find_package(OpenGL REQUIRED)
+find_package(Raylib REQUIRED)
 find_package(Threads)
 
 # Manual include paths
