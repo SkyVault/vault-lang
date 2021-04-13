@@ -60,6 +60,9 @@ void Vault::freeObj(Obj* obj) {
       obj->val.str.data = nullptr;
       break;
     }
+    case ValueType::NATIVE_FUNC: {
+      delete obj->val.native;
+    }
   }
   
   free(obj);
@@ -85,8 +88,15 @@ void Vault::deRef(Obj *obj) {
   }
 }
 
-Obj* Vault::newPair(Obj* a, Obj* b, bool quoted) { 
+Obj* newObj() {
   Obj* obj = Vault::alloc<Obj>();
+  obj->flags = 0;
+  obj->ref = 0;
+  return obj;
+}
+
+Obj* Vault::newPair(Obj* a, Obj* b, bool quoted) { 
+  Obj* obj = newObj();
   if (quoted) obj->flags |= Flags::QUOTED;
   obj->type = Vault::ValueType::PAIR;
   obj->val.list.slot = a;
@@ -102,21 +112,21 @@ Obj* Vault::newList(bool quoted) {
 }
 
 Obj* Vault::newNum(Number number) {
-  Obj* obj = Vault::alloc<Obj>();
+  Obj* obj = newObj();
   obj->type = Vault::ValueType::NUMBER; 
   obj->val.num = number;
   return obj;
 }
 
 Obj* Vault::newBool(Bool flag) {
-  Obj* obj = Vault::alloc<Obj>();
+  Obj* obj = newObj();
   obj->type = Vault::ValueType::BOOL; 
   obj->val.boolean = flag;
   return obj; 
 }
 
 Obj* Vault::newStr(const std::string &atom) { 
-  Obj* obj = Vault::alloc<Obj>();
+  Obj* obj = newObj();
   obj->type = Vault::ValueType::STR; 
   obj->val.atom.data = Vault::alloc<char>(atom.length());
   obj->val.atom.len = atom.length();
@@ -133,7 +143,7 @@ Obj* Vault::newAtom(const std::string &atom, bool quoted) {
 }
 
 Obj* Vault::newProgn(bool quoted) {
-  Obj* obj = Vault::alloc<Obj>();
+  Obj* obj = newObj();
   if (quoted) obj->flags |= Flags::QUOTED;
   obj->type = Vault::ValueType::PROGN; 
   obj->val.list.next = NULL;
@@ -142,14 +152,14 @@ Obj* Vault::newProgn(bool quoted) {
 }
 
 Obj* Vault::newCFun(CFun lambda) {
-  Obj* obj = Vault::alloc<Obj>();
+  Obj* obj = newObj();
   obj->type = ValueType::CFUNC;
   obj->val.cfun = lambda;
   return obj;
 }
 
 Obj* Vault::newFun(Obj* env, Obj* name, Obj* params, Obj* progn, bool quoted) {
-  Obj* obj = Vault::alloc<Obj>();
+  Obj* obj = newObj();
   if (quoted) obj->flags |= Flags::QUOTED;
   obj->type = ValueType::FUNC;
   obj->val.fun.capturedEnv = env;
@@ -343,7 +353,7 @@ Obj* Vault::shift(Obj* &list){
 }
 
 void Vault::printObj(Obj* obj) {
-  std::cout << obj << std::endl;
+  std::cout << "t: " << ValueTypeS[obj->type] << " v: " << obj << std::endl;
 }
 
 void Vault::printEnv(Obj* env) {

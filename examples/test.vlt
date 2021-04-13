@@ -1,0 +1,22 @@
+(require "prelude")
+
+(def px 10)
+(def py 10)
+
+(hide-cursor)
+
+(while #t (do
+  (set-cursor-position 0 0)
+  (set-cursor-position px py)
+  (print +fg-red+ "@")
+  (let (input (readln))
+    (if (= input "d")
+      (set px (+ px 1)))
+    (if (= input "a")
+      (set px (- px 1)))
+    (if (= input "s")
+      (set py (+ py 1)))
+    (if (= input "w")
+      (set py (- py 1))))))
+
+(show-cursor)

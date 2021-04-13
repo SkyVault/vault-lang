@@ -27,6 +27,7 @@ namespace Vault {
   GEN(PROGN)              \
   GEN(FUNC)               \
   GEN(CFUNC)              \
+  GEN(NATIVE_FUNC)        \
   GEN(NUM_VALUE_TYPE) 
 
   enum ValueType { X_VALUE_TYPE(GEN_ENUM) }; 
@@ -70,6 +71,8 @@ namespace Vault {
     Obj* progn;
   };
 
+  struct FnBridge;
+
   union Val {
     Str atom;
     Number num;
@@ -79,6 +82,7 @@ namespace Vault {
     Dict dict;
     CFun cfun;
     Fun fun;
+    FnBridge* native;
   };
 
   struct Obj {
@@ -138,6 +142,11 @@ namespace Vault {
         break;
       }
 
+      case ValueType::NATIVE_FUNC: {
+        std::cout << "<nativefun>";
+        break;
+      }
+
       case ValueType::FUNC: {
         std::cout << "<fun:" << obj->val.fun.name << ">";
         break;
@@ -172,6 +181,70 @@ namespace Vault {
     static Obj unit = {}; 
     unit.type = ValueType::UNIT;
     return &unit;
+  }
+
+  template <typename T> T fromObj(Obj* obj) {
+    if (obj->type == ValueType::NUMBER) return obj->val.num;
+    if (obj->type == ValueType::BOOL) return obj->val.boolean;
+    if (obj->type == ValueType::UNIT) return NULL;
+    return NULL;
+  }
+
+  template <typename T> Obj* toObj(T v) {
+    if constexpr (std::is_same_v<T, double> || std::is_same_v<T, float>) { return newNum(v); }
+    if constexpr (std::is_same_v<T, bool>) { return newBool(v); }
+  } 
+
+  struct FnBridge {
+      virtual ~FnBridge() {}
+      virtual Obj* operator()(const std::vector<Obj*>& params) = 0;
+  };    
+
+  // Concrete class that exposes a C++ function to the script engine.
+  template <class Res, class ... Param>
+  struct FnBridge_Impl : FnBridge { 
+      using funcType = Res(*)(Param...);
+
+      virtual Obj* operator()(const std::vector<Obj*>& params) {
+          if (sizeof...(Param) != params.size())
+              throw std::domain_error("Invalid size of parameter array");
+
+          if constexpr (std::is_void_v<Res>) { 
+            call_impl<std::tuple<Param...>>(
+              func, params, std::make_index_sequence<sizeof...(Param)>()
+            );
+            return newUnit();
+          }
+
+          if constexpr (!std::is_void_v<Res>) {
+            return toObj<Res>(
+              call_impl<std::tuple<Param...>>(
+                func, params, std::make_index_sequence<sizeof...(Param)>()
+              )
+            );
+          }
+      }
+
+      template <class Tuple, std::size_t... N>
+      Res call_impl(funcType func, const std::vector<Obj*>& params, std::index_sequence<N...>) {
+          return func(fromObj<typename std::tuple_element<N, Tuple>::type>(params[N])...);
+      }; 
+
+      funcType func; 
+      FnBridge_Impl(funcType func) : func(func) {}
+  };
+
+  template <class Res, class ... Param>
+  auto wrapNativeFn(Res(*func)(Param...)) {
+    return new FnBridge_Impl<Res, Param...>(func);
+  }
+
+  template <class Res, class ... Param>
+  Obj* newNative(Res(*func)(Param...)) {
+    Obj* obj = Vault::alloc<Obj>();
+    obj->type = ValueType::NATIVE_FUNC;
+    obj->val.native = new FnBridge_Impl<Res, Param...>(func);
+    return obj;
   }
 
   bool cmp(Obj* a, Obj* b);

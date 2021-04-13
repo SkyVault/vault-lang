@@ -2,6 +2,25 @@
 
 using namespace Vault;
 
+void replace(std::string& source, const std::string& target, const std::string replacement) {
+  size_t index = 0;
+  while (true) {
+    index = source.find(target, index);
+    if (index == std::string::npos) break;
+    source.replace(index, target.size(), replacement);
+    index += target.size();
+  }
+}
+
+std::string unescapeString(std::string str) {
+  replace(str, "\\n", "\n");
+  replace(str, "\\t", "\t");
+  replace(str, "\\033", "\033");
+  replace(str, "\\x1b", "\x1b");
+  replace(str, "\\u001b", "\u001b");
+  return str;
+}
+
 Obj* print(Obj* env, Obj* args) {
   const size_t s = Vault::len(args) ;
   if (s < 1) return newStr(""); 
@@ -10,10 +29,9 @@ Obj* print(Obj* env, Obj* args) {
   while (it) {
     ss << eval(env, it->asList().slot); 
     it = it->asList().next;
-    if (it) ss << " ";
   } 
   const auto str = ss.str();
-  std::cout << str;
+  std::cout << unescapeString(str);
   return newStr(str);
 };
 
@@ -132,6 +150,43 @@ Obj* Vault::newStdEnv() {
     return eval(env, args);
   }));
 
+  putInEnv(env, newAtom("do"), newCFun([](Obj* env, Obj* args){ 
+    args->type = ValueType::PROGN;
+    return eval(env, args);
+  })); 
+
+  putInEnv(env, newAtom("concat"), newCFun([](Obj* env, Obj* args){
+    auto a = eval(env, shift(args));
+    auto b = eval(env, shift(args));
+
+    char* buff = (char*)malloc(a->val.str.len + b->val.str.len + 1);
+    defer(free(buff));
+
+    sprintf(buff, "%.*s%.*s", a->val.str.len, a->val.str.data, b->val.str.len, b->val.str.data);
+
+    return newStr(std::string{buff}); 
+  }));
+
+  putInEnv(env, newAtom("num->int-str"), newCFun([](Obj* env, Obj* args){
+    auto a = eval(env, shift(args));
+    if (a->type != ValueType::NUMBER) { 
+      std::cout << "Error: expected a number but got '" << a << "'" << std::endl;
+      return newStr("");
+    }
+    return newStr(std::to_string((int)a->val.num));
+  }));
+
+  putInEnv(env, newAtom("require"), newCFun([](Obj* env, Obj* args){ 
+    auto* path = eval(env, shift(args));
+
+    char* cpath = (char*)malloc(path->val.str.len + 5);
+    defer(free(cpath)); 
+    sprintf(cpath, "%.*s.vlt", path->val.str.len, path->val.str.data);
+
+    auto* progn = Vault::readCode(readFile(std::string{cpath}));
+    return Vault::eval(env, progn);
+  })); 
+
   putInEnv(env, newAtom("defun"), newCFun([](Obj* env, Obj* args){ 
     Obj* name = shift(args); 
     Obj* params = NULL;
@@ -190,6 +245,11 @@ Obj* Vault::newStdEnv() {
   putInEnv(env, newAtom("readln"), newCFun([](Obj* env, Obj* args){
     return newStr(readInput());
   }));
+
+
+  putInEnv(env, newAtom("readln"), newCFun([](Obj* env, Obj* args){
+    return newStr(readInput());
+  })); 
 
   putInEnv(env, newAtom("print"), newCFun(print)); 
   putInEnv(env, newAtom("println"), newCFun(println)); 
@@ -250,5 +310,9 @@ Obj* Vault::newStdEnv() {
 }
 
 void Vault::initAnsiTerm(Obj* env) {
+
+} 
+
+void Vault::initRaylib(Obj* env) {
 
 }

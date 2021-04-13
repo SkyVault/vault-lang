@@ -18,9 +18,16 @@ Obj* invoke(Obj* env, Obj* callable, Obj* args) {
       auto v = eval(newEnv, shift(args));
       putInEnv(newEnv, it->val.list.slot, v);
       it = it->val.list.next;
-    }
-
+    } 
     return eval(newEnv, progn);
+  } else if (callable->type == ValueType::NATIVE_FUNC) {
+    auto xs = std::vector<Obj*>();
+    auto it = args;
+    while (it) {
+      xs.emplace_back(it->val.list.slot);
+      it = it->val.list.next;
+    }
+    return (*callable->val.native)(xs);
   } else {
     std::cout << "Can't evaluate function: " << callable << std::endl;
     return newUnit();
@@ -54,7 +61,8 @@ Obj* evalExpr(Obj* env, Obj* obj) {
         std::cout << "Error, evaluating empty list" << std::endl;
         return newUnit();
       }
-      return invoke(env, evalExpr(env, car(obj)), cdr(obj));
+      auto fn = evalExpr(env, car(obj));
+      return invoke(env, fn, cdr(obj));
     }
 
     case ValueType::PROGN: {

@@ -35,7 +35,6 @@ void runScript(Obj* env, const std::string& path) {
   auto code = readFile(path);
   auto* progn = Vault::readCode(code);
   auto* result = Vault::eval(env, progn); 
-  std::cout << "\nreturned:\n" << result << std::endl;
 }
 
 using ArgsIter = std::vector<std::string>::iterator;
