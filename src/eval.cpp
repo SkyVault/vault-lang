@@ -8,8 +8,14 @@ Obj* invoke(Obj* env, Obj* callable, Obj* args) {
   if (callable->type == ValueType::CFUNC) {
     return callable->val.cfun(env, args);
   } else if (callable->type == ValueType::FUNC) {
+
     auto params = callable->val.fun.params;
     auto progn = callable->val.fun.progn;
+
+    if (len(args) != len(params)) {
+      std::cout << "Error, wrong number of arguments for function: " << callable << std::endl;
+      std::exit(EXIT_FAILURE);
+    }
 
     Obj* newEnv = cons(newList(), env);
 

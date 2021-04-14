@@ -38,3 +38,8 @@
 
 (defun show-cursor ()
   (print "\033[?25h"))
+
+(defun map (fn xs)
+  (if (not (empty? xs)) (do
+    (fn (car xs))
+    (map (cdr xs)))))

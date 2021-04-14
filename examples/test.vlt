@@ -1,17 +1,9 @@
-(require "prelude")
+(defun map (fn xs)
+  (if (not (empty? xs))
+    (cons 
+      (fn (car xs)) 
+      (map (cdr xs)))))
 
-(init-raylib)
+(def xs '(1 2 3 4 5 6 7 8 9 10))
 
-(rl-init-window 640 480 "hello world")
-
-(def x 100)
-(def y 200)
-
-(while (not (rl-window-should-close)) (do 
-  (rl-begin-drawing)
-  (rl-clear-background)
-
-    (rl-draw-rectangle x y 100 100)
-
-    (rl-draw-fps 0 0) 
-  (rl-end-drawing))) 
+(println (map (defun (i) (* i i)) xs))

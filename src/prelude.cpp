@@ -283,6 +283,11 @@ Obj* Vault::newStdEnv() {
     return cdr(eval(env, shift(args)));
   }));
 
+  putInEnv(env, newAtom("empty?"), newCFun([](Obj* env, Obj* args){
+    auto xs = eval(env, shift(args));
+    return newBool(len(xs) == 0);
+  })); 
+
   putInEnv(env, newAtom("let"), newCFun([](Obj* env, Obj* args){
     auto* bindings = shift(args);
     assert(bindings->type == ValueType::LIST);
