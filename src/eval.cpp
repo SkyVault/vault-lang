@@ -24,7 +24,7 @@ Obj* invoke(Obj* env, Obj* callable, Obj* args) {
     auto xs = std::vector<Obj*>();
     auto it = args;
     while (it) {
-      xs.emplace_back(it->val.list.slot);
+      xs.emplace_back(eval(env, it->val.list.slot));
       it = it->val.list.next;
     }
     return (*callable->val.native)(xs);

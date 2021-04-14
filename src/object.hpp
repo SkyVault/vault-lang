@@ -176,9 +176,8 @@ namespace Vault {
   }
 
   template <typename T> T fromObj(Obj* obj) { 
-    if constexpr (std::is_same_v<T, double>) return obj->val.num;
-    if constexpr (std::is_same_v<T, int>) return (int)obj->val.num;
-    if constexpr (std::is_same_v<T, bool>) return (int)obj->val.boolean;
+    if constexpr (std::is_same_v<T, double> || std::is_same_v<T, float> || std::is_same_v<T, int>) return (T)obj->val.num;
+    if constexpr (std::is_same_v<T, bool>) return (T)obj->val.boolean;
     if constexpr (std::is_same_v<T, const char*>) {
       static char buff[2048*4] = {0};
       for (int i = 0; i < obj->val.str.len; i++)
@@ -189,9 +188,7 @@ namespace Vault {
   }
 
   template <typename T> Obj* toObj(T v) {
-    if constexpr (std::is_same_v<T, double> 
-                  || std::is_same_v<T, float>
-                  || std::is_same_v<T, int>) { return newNum(v); }
+    if constexpr (std::is_same_v<T, double> || std::is_same_v<T, float> || std::is_same_v<T, int>) { return newNum(v); } 
     if constexpr (std::is_same_v<T, bool>) { return newBool(v); }
     if constexpr (std::is_same_v<T, const char*>) { return newStr(v); }
   } 
