@@ -1,1 +1,6 @@
 (require "prelude")
+
+(while #t
+  (println "A")
+  (println "B")
+  (println "C"))

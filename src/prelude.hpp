@@ -4,6 +4,10 @@
 #include <raylib.h>
 #include <cmath>
 
+#ifdef __unix__
+#include <termios.h>
+#endif
+
 namespace Vault {
   Obj* newStdEnv();
 

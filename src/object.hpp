@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <string_view>
+#include <sstream>
 #include <string>
 #include <cstring>
 #include <map>
@@ -176,10 +177,16 @@ namespace Vault {
   }
 
   template <typename T> T fromObj(Obj* obj) { 
+    static char buff[2048*4] = {0};
     if constexpr (std::is_same_v<T, double> || std::is_same_v<T, float> || std::is_same_v<T, int>) return (T)obj->val.num;
     if constexpr (std::is_same_v<T, bool>) return (T)obj->val.boolean;
+    if constexpr (std::is_same_v<T, std::string>) {
+      std::stringstream ss;
+      for (int i = 0; i < obj->val.str.len; i++)
+        ss << obj->val.str.data[i];
+      return newStr(ss.str());
+    }
     if constexpr (std::is_same_v<T, const char*>) {
-      static char buff[2048*4] = {0};
       for (int i = 0; i < obj->val.str.len; i++)
         buff[i] = obj->val.str.data[i];
       buff[obj->val.str.len] = '\0';
@@ -191,6 +198,7 @@ namespace Vault {
     if constexpr (std::is_same_v<T, double> || std::is_same_v<T, float> || std::is_same_v<T, int>) { return newNum(v); } 
     if constexpr (std::is_same_v<T, bool>) { return newBool(v); }
     if constexpr (std::is_same_v<T, const char*>) { return newStr(v); }
+    if constexpr (std::is_same_v<T, std::string>) { return newStr(v); }
   } 
 
   struct FnBridge {

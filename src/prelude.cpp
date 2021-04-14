@@ -232,7 +232,8 @@ Obj* Vault::newStdEnv() {
 
   putInEnv(env, newAtom("while"), newCFun([](Obj* env, Obj* args){
     auto* expr = shift(args);
-    auto* body = shift(args);
+    auto* body = args;
+    body->type = ValueType::PROGN;
 
     auto* newEnv = cons(newList(), env);
     while (isTrue(eval(env, expr))){
@@ -283,6 +284,27 @@ Obj* Vault::newStdEnv() {
     return cdr(eval(env, shift(args)));
   }));
 
+  putInEnv(env, newAtom("type?"), newCFun([](Obj* env, Obj* args){
+    auto xs = eval(env, shift(args));
+    switch (xs->type) {
+      case ValueType::UNIT: return newAtom("unit", true);
+      case ValueType::NUMBER: return newAtom("number", true);
+      case ValueType::STR: return newAtom("str", true);
+      case ValueType::ATOM: return newAtom("atom", true);
+      case ValueType::BOOL: return newAtom("bool", true);
+      case ValueType::PAIR: return newAtom("pair", true);
+      case ValueType::LIST: return newAtom("list", true);
+      case ValueType::DICT: return newAtom("dict", true);
+      case ValueType::PROGN: return newAtom("progn", true);
+      case ValueType::FUNC: return newAtom("func", true);
+      case ValueType::CFUNC: return newAtom("cfunc", true);
+      case ValueType::NATIVE_FUNC: return newAtom("native-func", true);
+      default: {
+        assert(0);
+      }
+    }
+  }));
+
   putInEnv(env, newAtom("empty?"), newCFun([](Obj* env, Obj* args){
     auto xs = eval(env, shift(args));
     return newBool(len(xs) == 0);
@@ -322,8 +344,18 @@ Obj* Vault::newStdEnv() {
   return env;
 }
 
-void Vault::initAnsiTerm(Obj* env) {
+std::string readChar(int i) {
+  char chr = '\0';
 
+  system("stty raw");
+  chr = getchar();
+  system("stty cooked");
+
+  return std::string{chr};
+}
+
+void Vault::initAnsiTerm(Obj* env) {
+  putInEnv(env, newAtom("term/read-char"), newNative(readChar));
 } 
 
 void drawRect(double x, double y, double w, double h) {

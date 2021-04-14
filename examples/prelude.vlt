@@ -39,6 +39,17 @@
 (defun show-cursor ()
   (print "\033[?25h"))
 
+(init-ansi-term-env)
+
+(defun list? (v) (= (type? v) 'list))
+(defun atom? (v) (= (type? v) 'atom))
+(defun func? (v) (= (type? v) 'func))
+(defun cfunc? (v) (= (type? v) 'cfunc))
+(defun native-func? (v) (= (type? v) 'native-func))
+(defun number? (v) (= (type? v) 'number))
+(defun bool? (v) (= (type? v) 'bool)) 
+(defun str? (v) (= (type? v) 'str))
+
 (defun map (fn xs)
   (if (not (empty? xs))
     (cons 
