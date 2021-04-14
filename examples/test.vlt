@@ -1,9 +1,1 @@
-(defun map (fn xs)
-  (if (not (empty? xs))
-    (cons 
-      (fn (car xs)) 
-      (map (cdr xs)))))
-
-(def xs '(1 2 3 4 5 6 7 8 9 10))
-
-(println (map (defun (i) (* i i)) xs))
+(require "prelude")

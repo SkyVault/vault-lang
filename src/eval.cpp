@@ -53,12 +53,12 @@ Obj* evalExpr(Obj* env, Obj* obj) {
       return obj;
 
     case ValueType::ATOM: {
-      auto* atom = findInEnv(env, obj);
-      if (!atom || atom->type == ValueType::UNIT) {
+      auto* value = findInEnv(env, obj);
+      if (!value) {
         std::cout << "Cannot find '" << obj << "' in the environment" << std::endl;
         return newUnit();
       }
-      return atom;
+      return value;
     }
 
     case ValueType::LIST: {

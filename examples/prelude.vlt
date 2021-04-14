@@ -40,6 +40,13 @@
   (print "\033[?25h"))
 
 (defun map (fn xs)
-  (if (not (empty? xs)) (do
-    (fn (car xs))
-    (map (cdr xs)))))
+  (if (not (empty? xs))
+    (cons 
+      (fn (car xs)) 
+      (map fn (cdr xs)))))
+
+(defun filter (fn xs)
+  (if (not (empty? xs))
+    (if (fn (car xs))
+      (cons (car xs) (filter fn (cdr xs)))
+      (filter fn (cdr xs)))))

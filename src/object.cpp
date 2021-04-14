@@ -300,7 +300,10 @@ Obj* Vault::cons(Obj* value, Obj* list) {
 }
 
 Obj* Vault::car(Obj* list){ return list->val.list.slot; }
-Obj* Vault::cdr(Obj* list){ return list->val.list.next; }
+Obj* Vault::cdr(Obj* list){ 
+  if (list->val.list.next == NULL) return newUnit();
+  return list->val.list.next; 
+}
 
 Obj* Vault::fst(const Obj* list) { return list->val.list.a; } 
 Obj* Vault::snd(const Obj* list) { return list->val.list.b; } 
