@@ -92,16 +92,8 @@ namespace Vault {
     int ref{0};
     unsigned int flags{0};
 
-    Str asAtom();
-    Number asNum();
-    Str asStr();
-    Bool asBool();
-    List& asList();
-    Dict& asDict();
-
     Obj* get(int index);
-    std::string_view toStrView() const;
-
+    std::string_view toStrView() const; 
     friend std::ostream& operator<<(std::ostream& os, const Obj* obj);
   };
 
@@ -124,8 +116,8 @@ namespace Vault {
         std::cout << "(";
         auto it = (Obj*)obj;
         while (it) {
-          os << it->asList().slot;
-          it = it->asList().next;
+          os << it->val.list.slot;
+          it = it->val.list.next;
           if (it){ os << " "; }
         }
         os << ")";
@@ -183,16 +175,25 @@ namespace Vault {
     return &unit;
   }
 
-  template <typename T> T fromObj(Obj* obj) {
-    if (obj->type == ValueType::NUMBER) return obj->val.num;
-    if (obj->type == ValueType::BOOL) return obj->val.boolean;
-    if (obj->type == ValueType::UNIT) return NULL;
-    return NULL;
+  template <typename T> T fromObj(Obj* obj) { 
+    if constexpr (std::is_same_v<T, double>) return obj->val.num;
+    if constexpr (std::is_same_v<T, int>) return (int)obj->val.num;
+    if constexpr (std::is_same_v<T, bool>) return (int)obj->val.boolean;
+    if constexpr (std::is_same_v<T, const char*>) {
+      static char buff[2048*4] = {0};
+      for (int i = 0; i < obj->val.str.len; i++)
+        buff[i] = obj->val.str.data[i];
+      buff[obj->val.str.len] = '\0';
+      return buff; 
+    }
   }
 
   template <typename T> Obj* toObj(T v) {
-    if constexpr (std::is_same_v<T, double> || std::is_same_v<T, float>) { return newNum(v); }
+    if constexpr (std::is_same_v<T, double> 
+                  || std::is_same_v<T, float>
+                  || std::is_same_v<T, int>) { return newNum(v); }
     if constexpr (std::is_same_v<T, bool>) { return newBool(v); }
+    if constexpr (std::is_same_v<T, const char*>) { return newStr(v); }
   } 
 
   struct FnBridge {

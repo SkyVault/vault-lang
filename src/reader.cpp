@@ -28,19 +28,20 @@ Tok readStr(std::string::iterator& it, std::string::iterator& end) {
 }
 
 Tok Vault::readToken(std::string::iterator& it, std::string::iterator& end) {
-  while (std::isspace(*it)) { it += 1; }
+  while (it != end && std::isspace(*it)) { it += 1; }
   if (it >= end) return Tok{};
 
   bool isNeg = false;
   bool isDec = false;
 
-  auto start = it;
-
   // Skip comments
   if (*it == ';') {
     while (it != end && *it != '\n') it++;
+    while (it != end && std::isspace(*it)) { it += 1; }
     if (it == end) return Tok{};
   }
+
+  auto start = it;
 
   // Parsing numbers
   if (*it == '-') { isNeg = true; it++; }

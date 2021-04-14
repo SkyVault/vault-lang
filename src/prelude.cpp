@@ -27,8 +27,8 @@ Obj* print(Obj* env, Obj* args) {
   std::stringstream ss(""); 
   auto it = args;
   while (it) {
-    ss << eval(env, it->asList().slot); 
-    it = it->asList().next;
+    ss << eval(env, it->val.list.slot); 
+    it = it->val.list.next;
   } 
   const auto str = ss.str();
   std::cout << unescapeString(str);
@@ -52,8 +52,8 @@ Obj* Vault::newStdEnv() {
     auto result = 0.0;
     auto it = args;
     while (it) {
-      result += eval(env, it->asList().slot)->asNum();
-      it = it->asList().next;
+      result += eval(env, it->val.list.slot)->val.num;
+      it = it->val.list.next;
     }
     return newNum(result);
   })); 
@@ -62,8 +62,8 @@ Obj* Vault::newStdEnv() {
     auto result = 1.0;
     auto it = args;
     while (it) {
-      result *= eval(env, it->asList().slot)->asNum();
-      it = it->asList().next;
+      result *= eval(env, it->val.list.slot)->val.num;
+      it = it->val.list.next;
     }
     return newNum(result);
   })); 
@@ -74,10 +74,10 @@ Obj* Vault::newStdEnv() {
     auto fst = true;
     while (it) {
       if (fst) { 
-        result = eval(env, it->asList().slot)->asNum();
+        result = eval(env, it->val.list.slot)->val.num;
         fst = false;
-      } else result -= eval(env, it->asList().slot)->asNum(); 
-      it = it->asList().next;
+      } else result -= eval(env, it->val.list.slot)->val.num; 
+      it = it->val.list.next;
     }
     return newNum(result);
   })); 
@@ -88,10 +88,10 @@ Obj* Vault::newStdEnv() {
     auto fst = true;
     while (it) {
       if (fst) { 
-        result = eval(env, it->asList().slot)->asNum();
+        result = eval(env, it->val.list.slot)->val.num;
         fst = false;
-      } else result /= eval(env, it->asList().slot)->asNum(); 
-      it = it->asList().next;
+      } else result /= eval(env, it->val.list.slot)->val.num; 
+      it = it->val.list.next;
     }
     return newNum(result);
   })); 
@@ -121,7 +121,7 @@ Obj* Vault::newStdEnv() {
   }));
 
   putInEnv(env, newAtom("not"), newCFun([](Obj* env, Obj* args){ 
-    return newBool(!eval(env, args->get(0))->asBool());
+    return newBool(!eval(env, args->get(0))->val.boolean);
   }));
 
   putInEnv(env, newAtom("def"), newCFun([](Obj* env, Obj* args){ 
@@ -298,13 +298,21 @@ Obj* Vault::newStdEnv() {
       it = it->val.list.next;
     } 
     return eval(newEnv, args); 
-  }));
-
+  })); 
 
   putInEnv(env, newAtom("init-ansi-term-env"), newCFun([](Obj* env, Obj* args){
     initAnsiTerm(env);
     return newUnit();
   }));
+
+  putInEnv(env, newAtom("init-raylib"), newCFun([](Obj* env, Obj* args){
+    initRaylib(env);
+    return newUnit();
+  }));
+
+  putInEnv(env, newAtom("sin"), newNative(sin));
+  putInEnv(env, newAtom("cos"), newNative(cos));
+  putInEnv(env, newAtom("atan2"), newNative(atan2));
 
   return env;
 }
@@ -313,6 +321,23 @@ void Vault::initAnsiTerm(Obj* env) {
 
 } 
 
-void Vault::initRaylib(Obj* env) {
+void drawRect(double x, double y, double w, double h) {
+  DrawRectangle((int)x, (int)y, (int)w, (int)h, RED);
+}
 
+void clearBg() {
+  ClearBackground(BLACK);
+}
+
+void Vault::initRaylib(Obj* env) {
+  putInEnv(env, newAtom("rl-init-window"), newNative(InitWindow));
+  putInEnv(env, newAtom("rl-window-should-close"), newNative(WindowShouldClose));
+  putInEnv(env, newAtom("rl-begin-drawing"), newNative(BeginDrawing));
+  putInEnv(env, newAtom("rl-end-drawing"), newNative(EndDrawing));
+  putInEnv(env, newAtom("rl-draw-rectangle"), newNative(drawRect));
+  putInEnv(env, newAtom("rl-frame-time"), newNative(GetFrameTime));
+  putInEnv(env, newAtom("rl-clear-background"), newNative(clearBg));
+  putInEnv(env, newAtom("rl-draw-fps"), newNative(DrawFPS));
+  // putInEnv(env, newAtom("rl-is-key-pressed"), newNative(IsKeyPressed));
+  // putInEnv(env, newAtom("rl-is-key-down"), newNative(IsKeyDown));
 }

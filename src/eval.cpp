@@ -69,8 +69,8 @@ Obj* evalExpr(Obj* env, Obj* obj) {
       auto ret = newUnit();
       auto it = obj;
       while (it) {
-        ret = evalExpr(env, it->asList().slot);
-        it = it->asList().next;
+        ret = evalExpr(env, it->val.list.slot);
+        it = it->val.list.next;
       }
       return ret;
     }

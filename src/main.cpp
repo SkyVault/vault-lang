@@ -54,6 +54,10 @@ void newProject(ArgsIter it, ArgsIter end) {
   entryFile.close();
 }
 
+void test(const char* hello) {
+  std::cout << hello << " world" << std::endl;
+}
+
 int main(const int num_args, const char* args[]) { 
   if (num_args == 1) { return repl(); }
 

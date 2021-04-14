@@ -2,47 +2,6 @@
 
 using namespace Vault; 
 
-Str Obj::asAtom() {
-#ifdef VAULT_VALUE_CHECK
-  assert(this->type == ValueType::ATOM);
-#endif
-  return val.atom;
-}
-
-Number Obj::asNum() {
-#ifdef VAULT_VALUE_CHECK
-  assert(this->type == ValueType::NUMBER); 
-#endif
-  return val.num;
-}
-
-Str Obj::asStr() {
-#ifdef VAULT_VALUE_CHECK 
-  assert(this->type == ValueType::STR); 
-#endif 
-  return val.str;
-}
-
-Bool Obj::asBool() {
-#ifdef VAULT_VALUE_CHECK 
-  assert(this->type == ValueType::BOOL); 
-#endif 
-  return val.boolean;
-}
-
-List& Obj::asList() {
-#ifdef VAULT_VALUE_CHECK 
-  assert(
-    this->type == ValueType::LIST 
-    || this->type == ValueType::PROGN 
-    || this->type == ValueType::PAIR
-  ); 
-#endif 
-  return val.list;
-}
-
-// MAKE
-
 Obj* ref(Obj* obj) {
   obj->ref++;
   return obj;
@@ -250,7 +209,7 @@ Obj* Vault::Obj::get(int index) {
 
   auto* it = this;
   while (index > 0) {
-    it = it->asList().next;
+    it = it->val.list.next;
     index--;
   }
 
@@ -271,8 +230,8 @@ std::string_view Vault::Obj::toStrView() const {
 bool Vault::isTrue(Obj* v) {
   if (!v) return false;
   if (v->type == ValueType::UNIT) return false;
-  if (v->type == ValueType::BOOL) return v->asBool();
-  if (v->type == ValueType::NUMBER) return v->asNum() == 0.0;
+  if (v->type == ValueType::BOOL) return v->val.boolean;
+  if (v->type == ValueType::NUMBER) return v->val.num == 0.0;
   return true;
 }
 
@@ -281,12 +240,12 @@ bool Vault::cmp(Obj* a, Obj* b) {
   if (a->type != b->type) return false; // TODO(Dustin): Look into auto promoting types
 
   switch(a->type) {
-    case ValueType::NUMBER: return a->asNum() == b->asNum();
+    case ValueType::NUMBER: return a->val.num == b->val.num;
     case ValueType::STR:
     case ValueType::ATOM: return
       a->val.atom.len == b->val.atom.len 
       && strncmp(a->val.atom.data, b->val.atom.data, a->val.atom.len) == 0;
-    case ValueType::BOOL: return a->asBool() == b->asBool();
+    case ValueType::BOOL: return a->val.boolean == b->val.boolean;
     default: 
       assert(0);
       return false;
@@ -298,7 +257,7 @@ size_t Vault::len(Obj* list) {
   int i = 0;
   while (it && it->val.list.slot) {
     i+=1;
-    it = it->asList().next;
+    it = it->val.list.next;
   }
   return i;
 }

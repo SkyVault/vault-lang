@@ -2,6 +2,7 @@
 #include "eval.hpp"
 
 #include <raylib.h>
+#include <cmath>
 
 namespace Vault {
   Obj* newStdEnv();

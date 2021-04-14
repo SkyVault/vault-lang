@@ -1,22 +1,17 @@
 (require "prelude")
 
-(def px 10)
-(def py 10)
+(init-raylib)
 
-(hide-cursor)
+(rl-init-window 640 480 "hello world")
 
-(while #t (do
-  (set-cursor-position 0 0)
-  (set-cursor-position px py)
-  (print +fg-red+ "@")
-  (let (input (readln))
-    (if (= input "d")
-      (set px (+ px 1)))
-    (if (= input "a")
-      (set px (- px 1)))
-    (if (= input "s")
-      (set py (+ py 1)))
-    (if (= input "w")
-      (set py (- py 1))))))
+(def x 100)
+(def y 200)
 
-(show-cursor)
+(while (not (rl-window-should-close)) (do 
+  (rl-begin-drawing)
+  (rl-clear-background)
+
+    (rl-draw-rectangle x y 100 100)
+
+    (rl-draw-fps 0 0) 
+  (rl-end-draweng))) 
