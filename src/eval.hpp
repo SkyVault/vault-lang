@@ -4,5 +4,5 @@
 #include "reader.hpp"
 
 namespace Vault {
-  Obj* eval(Obj* env, Obj* val);
+  Obj* eval(Obj* env, Obj* val, bool noGc=false);
 }

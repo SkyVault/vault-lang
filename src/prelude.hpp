@@ -6,6 +6,7 @@
 
 #ifdef __unix__
 #include <termios.h>
+#include <sys/ioctl.h> 
 #endif
 
 namespace Vault {

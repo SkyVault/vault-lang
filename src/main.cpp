@@ -4,8 +4,8 @@
 #include <string>
 #include <filesystem>
 
-#include "vault.hpp"
 #include "gc.hpp" 
+#include "vault.hpp"
 #include "reader.hpp"
 #include "object.hpp"
 #include "eval.hpp"
@@ -23,18 +23,21 @@ Vault::Status repl() {
     const auto line = readInput();
     if (line == "q") break; 
     auto* progn = Vault::readCode(line);
-    auto* result = Vault::eval(env, progn);
+    auto* result = Vault::eval(env, progn, true);
     std::cout << result << std::endl;
-    deRef(progn);
+    Vault::Gc::markAndSweep(env);
   }
 
+  Vault::Gc::sweep();
   return Vault::Status::SUCCESS;
 }
 
 void runScript(Obj* env, const std::string& path) { 
   auto code = readFile(path);
   auto* progn = Vault::readCode(code);
+  putInEnv(env, newAtom("*source-code*"), progn);
   auto* result = Vault::eval(env, progn); 
+  Vault::Gc::sweep();
 }
 
 using ArgsIter = std::vector<std::string>::iterator;
@@ -70,7 +73,7 @@ int main(const int num_args, const char* args[]) {
   } else { 
     auto* env = newStdEnv();
     runScript(env, pargs[1]); 
-  }
+  } 
 
   return EXIT_SUCCESS;
 }

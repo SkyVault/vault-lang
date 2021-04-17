@@ -25,6 +25,7 @@ Obj* invoke(Obj* env, Obj* callable, Obj* args) {
       putInEnv(newEnv, it->val.list.slot, v);
       it = it->val.list.next;
     } 
+
     return eval(newEnv, progn);
   } else if (callable->type == ValueType::NATIVE_FUNC) {
     auto xs = std::vector<Obj*>();
@@ -89,6 +90,7 @@ Obj* evalExpr(Obj* env, Obj* obj) {
   return obj;
 }
 
-Obj* Vault::eval(Obj* env, Obj* obj) {
+Obj* Vault::eval(Obj* env, Obj* obj, bool noGc) {
+  if (!noGc) Vault::Gc::tryMarkAndSweep(env);
   return evalExpr(env, obj);
 }

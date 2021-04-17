@@ -2,55 +2,10 @@
 
 using namespace Vault; 
 
-Obj* ref(Obj* obj) {
-  obj->ref++;
-  return obj;
-}
-
-void Vault::freeObj(Obj* obj) { 
-  switch(obj->type) {
-    case ValueType::ATOM: {
-      free(obj->val.atom.data);
-      obj->val.atom.data = nullptr;
-      break;
-    }
-    case ValueType::STR: {
-      free(obj->val.str.data);
-      obj->val.str.data = nullptr;
-      break;
-    }
-    case ValueType::NATIVE_FUNC: {
-      delete obj->val.native;
-    }
-  }
-  
-  free(obj);
-  obj = NULL;
-}
-
-void Vault::deRef(Obj *obj) {
-  obj->ref -= 1;
-
-  switch (obj->type) {
-  case ValueType::UNIT: break;
-  case ValueType::LIST: {
-    if (obj->val.list.next) deRef(obj->val.list.next);
-    if (obj->val.list.slot) deRef(obj->val.list.slot);
-    break;
-  } 
-  default:
-    break;
-  }
-
-  if (obj->ref < 0) { 
-    freeObj(obj);
-  }
-}
-
 Obj* newObj() {
-  Obj* obj = Vault::alloc<Obj>();
+  Obj* obj = Vault::Gc::alloc();
   obj->flags = 0;
-  obj->ref = 0;
+  obj->mark = false;
   return obj;
 }
 
@@ -87,7 +42,7 @@ Obj* Vault::newBool(Bool flag) {
 Obj* Vault::newStr(const std::string &atom) { 
   Obj* obj = newObj();
   obj->type = Vault::ValueType::STR; 
-  obj->val.atom.data = Vault::alloc<char>(atom.length());
+  obj->val.atom.data = (char*)malloc(atom.length());
   obj->val.atom.len = atom.length();
   for(size_t i = 0; i < atom.length(); i++)
     obj->val.atom.data[i] = atom[i];

@@ -1,32 +1,44 @@
 #pragma once
 
+#include "object_type.hpp"
+
 #include <cstddef>
+#include <cstdlib>
 #include <cstdlib>
 #include <iostream>
 
-namespace Vault {
-  struct MemInfo {
-    int ref{0};
-  };
+#define HEAP_CHUNK 32
+#define MARK_AND_SWEAP_INTERVAL 10 
 
-  template <typename T>
-  T* alloc(int count = 1){
-    return (T*)malloc(sizeof(T) * count); 
+namespace Vault { 
+  namespace Gc { 
+
+    static struct { 
+      Obj** buff;
+      size_t capacity;
+      size_t size;
+
+      int tries;
+    } heap = {
+      .buff = NULL,
+      .capacity = 0,
+      .size = 0,
+    };
+
+    void put(Obj* obj);
+
+    static Obj* alloc(){ 
+      auto* it = (Obj*)malloc(sizeof(Obj)); 
+      put(it); 
+      return it;
+    }
+
+    void mark(Obj* obj);
+    void sweep();
+
+    void markAndSweep(Obj* root);
+    void tryMarkAndSweep(Obj* root);
+
+    void freeObj(Obj* obj); 
   }
-
-  template <typename T>
-  T* ref(T* t) {
-    getMemInfo(t)->ref += 1;
-    return t;
-  }
-
-  template <typename T>
-  void deRef(T* t) { 
-    getMemInfo(t)->ref -= 1;
-    if (getMemInfo(t)->ref < 0) {
-      free(getMemInfo(t));
-    } 
-  }
-
-  MemInfo* getMemInfo(void* block);
 }

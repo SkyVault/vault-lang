@@ -1,6 +1,8 @@
-(require "prelude")
+(require 'prelude)
 
-(while #t
-  (println "A")
-  (println "B")
-  (println "C"))
+(defun fact (n)
+  (if (< n 2)
+    1
+    (* n (fact (- n 1)))))
+
+(println "!5 = " (fact 5))

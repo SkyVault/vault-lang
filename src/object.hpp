@@ -14,140 +14,15 @@
 #include <functional>
 #include <cassert>
 
+#include "object_type.hpp"
+#include "gc.hpp"
+
 namespace Vault {
-
-#define X_VALUE_TYPE(GEN) \
-  GEN(UNIT)               \
-  GEN(NUMBER)             \
-  GEN(BOOL)               \
-  GEN(ATOM)               \
-  GEN(STR)                \
-  GEN(PAIR)               \
-  GEN(LIST)               \
-  GEN(DICT)               \
-  GEN(PROGN)              \
-  GEN(FUNC)               \
-  GEN(CFUNC)              \
-  GEN(NATIVE_FUNC)        \
-  GEN(NUM_VALUE_TYPE) 
-
-  enum ValueType { X_VALUE_TYPE(GEN_ENUM) }; 
-  constexpr std::string_view ValueTypeS[] = { X_VALUE_TYPE(GEN_STR) };
-
-#undef X_VALUE_TYPE
-
-  struct Str {
-    char* data{nullptr};
-    size_t len{0};
-  }; 
-
-  struct Obj;
-
-  struct Pair {
-    union {
-      struct { Obj* slot; Obj* next; };
-      struct { Obj* a; Obj* b; };
-    };
-  };
-
-  using List = Pair; 
-  using Dict = List; // List of pairs (k, v), in the future this will be an actual hashmap
-
-  using Env = Dict;
-
-  using Bool = uint8_t;
-  using Number = double;
-
-  typedef Obj*(*CFun)(Obj*, Obj*);
-
-  enum Flags {
-    NONE = 1 << 0,
-    QUOTED = 1 << 1,
-  };
-
-  struct Fun {
-    Obj* capturedEnv;
-    Obj* name;
-    Obj* params; // List of atoms
-    Obj* progn;
-  };
-
-  struct FnBridge;
-
-  union Val {
-    Str atom;
-    Number num;
-    Str str;
-    Bool boolean;
-    List list; 
-    Dict dict;
-    CFun cfun;
-    Fun fun;
-    FnBridge* native;
-  };
-
-  struct Obj {
-    ValueType type{ValueType::UNIT};
-    Val val;
-
-    int ref{0};
-    unsigned int flags{0};
-
-    Obj* get(int index);
-    std::string_view toStrView() const; 
-    friend std::ostream& operator<<(std::ostream& os, const Obj* obj);
-  };
 
   Obj* fst(const Obj* list);
   Obj* snd(const Obj* list);
 
   void printObj(Obj* obj);
-
-  inline std::ostream& operator<<(std::ostream& os, const Obj* obj) {
-    if (!obj) return os;
-    switch(obj->type) {
-      case ValueType::UNIT: { os << "()"; break; }
-      case ValueType::ATOM: { os << obj->toStrView(); break; }
-      case ValueType::NUMBER: { os << obj->val.num; break; }
-      case ValueType::STR: { os << obj->toStrView(); break; }
-      case ValueType::BOOL: { os << (obj->val.boolean ? "#t" : "#f"); break; }
-
-      case ValueType::LIST: 
-      case ValueType::PROGN: { 
-        std::cout << "(";
-        auto it = (Obj*)obj;
-        while (it) {
-          os << it->val.list.slot;
-          it = it->val.list.next;
-          if (it){ os << " "; }
-        }
-        os << ")";
-        break;
-      }
-
-      case ValueType::PAIR: {
-        std::cout << "[" << fst(obj) << " " << snd(obj) << "]";
-        break;
-      }
-
-      case ValueType::CFUNC: {
-        std::cout << "<cfun>";
-        break;
-      }
-
-      case ValueType::NATIVE_FUNC: {
-        std::cout << "<nativefun>";
-        break;
-      }
-
-      case ValueType::FUNC: {
-        std::cout << "<fun:" << obj->val.fun.name << ">";
-        break;
-      }
-
-      default: std::cout << "<unknown: " << ValueTypeS[obj->type] << ">"; break;
-    }
-  }
 
   Obj* newList(bool quoted=false);
   Obj* newNum(Number number=0.0);
@@ -161,7 +36,8 @@ namespace Vault {
 
   Obj* newEnv();
 
-  Obj* findInEnv(Obj* env, Obj* atom);
+  Obj* findInEnv(Obj* env, Obj* atom); 
+
   Obj* putInEnv(Obj* env, Obj* atom, Obj* value);
   Obj* putInEnvUnique(Obj* env, Obj* atom, Obj* value);
   Obj* putOrUpdateInEnv(Obj* env, Obj* atom, Obj* value);
@@ -173,6 +49,7 @@ namespace Vault {
   static Obj* newUnit() {
     static Obj unit = {}; 
     unit.type = ValueType::UNIT;
+    unit.mark = true; // Keep alive, static object shouldn't be deallocated.
     return &unit;
   }
 
@@ -247,7 +124,7 @@ namespace Vault {
 
   template <class Res, class ... Param>
   Obj* newNative(Res(*func)(Param...)) {
-    Obj* obj = Vault::alloc<Obj>();
+    Obj* obj = Vault::Gc::alloc();
     obj->type = ValueType::NATIVE_FUNC;
     obj->val.native = new FnBridge_Impl<Res, Param...>(func);
     return obj;
@@ -267,10 +144,6 @@ namespace Vault {
   Obj* cdr(Obj* list);
 
   Obj* shift(Obj* &list); // Pops off the top
-
-  void freeObj(Obj* obj); 
-  Obj* ref(Obj* obj);
-  void deRef(Obj* obj);
 
   void printEnv(Obj* env);
 }

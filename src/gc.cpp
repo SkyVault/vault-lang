@@ -1,7 +1,131 @@
 #include "gc.hpp"
 
+using namespace Vault::Gc;
 using namespace Vault;
-  
-MemInfo* Vault::getMemInfo(void* block) {
-  return (MemInfo*)((uint64_t)block - (uint64_t)sizeof(MemInfo));
+
+void Vault::Gc::put(Obj* obj) { 
+  if (heap.capacity == heap.size) {
+    if (heap.capacity == 0) { heap.capacity = HEAP_CHUNK; }
+    else heap.capacity *= 2;
+
+    heap.buff = (Obj**)realloc(heap.buff, sizeof(Obj*)*heap.capacity);
+    for (int i = heap.size; i < heap.capacity; i++) {
+      heap.buff[i] = NULL;
+    }
+  }
+
+  heap.buff[heap.size++] = obj;
+}
+
+void Vault::Gc::freeObj(Obj* obj) { 
+  if (!obj) return;
+  switch(obj->type) {
+    case ValueType::UNIT: break;
+
+    case ValueType::DICT: 
+    case ValueType::PAIR:
+    case ValueType::LIST:
+    case ValueType::PROGN: 
+    case ValueType::NUMBER:
+    case ValueType::BOOL:
+    case ValueType::CFUNC:
+    case ValueType::FUNC:
+      free(obj);
+      break;
+
+    case ValueType::NATIVE_FUNC: 
+      delete obj->val.native;
+      obj->val.native = NULL;
+      free(obj);
+      break;
+
+    case ValueType::ATOM:
+    case ValueType::STR:
+      free(obj->val.str.data);
+      free(obj);
+      break;
+
+    default:
+      std::cout << "Gc doesn't know how to free object '" << obj << "'\n";
+      std::exit(0);
+  }
+}
+
+void Vault::Gc::mark(Obj* obj) {
+  if (obj == NULL) return;
+  obj->mark = true; 
+  switch(obj->type) {
+    case ValueType::UNIT:
+    case ValueType::NUMBER:
+    case ValueType::BOOL:
+    case ValueType::ATOM:
+    case ValueType::CFUNC:
+    case ValueType::NATIVE_FUNC:
+    case ValueType::STR: break;
+    case ValueType::PAIR:
+    case ValueType::PROGN:
+    case ValueType::LIST:
+      mark(obj->val.list.slot);
+      mark(obj->val.list.next);
+      break;
+    case ValueType::DICT:
+      mark(obj->val.dict.slot);
+      mark(obj->val.dict.next);
+      break;
+    case ValueType::FUNC:
+      mark(obj->val.fun.name);
+      mark(obj->val.fun.params);
+      mark(obj->val.fun.progn);
+      break;
+    default:
+      std::cout << "Gc doesn't know how to mark object '" << obj << "'\n";
+      std::exit(0);
+  }
+}
+
+void Vault::Gc::sweep() {
+  const auto size = heap.size;
+  for (size_t i = 0; i < size; i++) {
+    Obj* obj = heap.buff[i];
+    if (obj) {
+      if (obj->mark) {
+        obj->mark = false;
+      } else {
+        freeObj(obj);
+        heap.buff[i] = NULL;
+        heap.size--;
+      } 
+    }
+  }
+
+  // Sort nulls to the back
+  for (int i = 0; i < size; i++) {
+    if (heap.buff[i] == NULL) { 
+      for (int j = i + 1; j < size; j++) {
+        if (heap.buff[j] != NULL) {
+          heap.buff[i] = heap.buff[j];
+          heap.buff[j] = NULL;
+          break;
+        }
+
+        if (j >= size - 1) {
+          return;
+        }
+      }
+    }
+  }
+}
+
+void Vault::Gc::tryMarkAndSweep(Obj* root) {
+  if (heap.tries > MARK_AND_SWEAP_INTERVAL) {
+    Vault::Gc::markAndSweep(root);
+    heap.tries = 0;
+    return;
+  }
+  heap.tries++;
+}
+
+void Vault::Gc::markAndSweep(Obj* root) {
+  mark(root);
+  sweep();
 }

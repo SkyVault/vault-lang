@@ -17,13 +17,16 @@ bool IsDelim(char ch) {
 
 Tok readStr(std::string::iterator& it, std::string::iterator& end) { 
   it++;
+
   auto start = it;
   while (it != end && *it != '\"') {
     it++;
   }
-  const auto stop = it;
-  it += 1;
+
+  const auto stop = it; it += 1;
+
   auto str = fromRange(start, stop);
+
   return Tok{TokType::TOK_STR_LIT, str};
 }
 

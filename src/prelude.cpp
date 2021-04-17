@@ -184,6 +184,7 @@ Obj* Vault::newStdEnv() {
     sprintf(cpath, "%.*s.vlt", path->val.str.len, path->val.str.data);
 
     auto* progn = Vault::readCode(readFile(std::string{cpath}));
+    putInEnv(env, newAtom("*source-code*"), progn);
     return Vault::eval(env, progn);
   })); 
 
@@ -215,6 +216,21 @@ Obj* Vault::newStdEnv() {
     return fn;
   })); 
 
+  putInEnv(env, newAtom("fn"), newCFun([](Obj* env, Obj* args){
+    auto params = shift(args);
+
+    auto it = params;
+    while (it && it->val.list.slot) { 
+      assert(it->val.list.slot->type == ValueType::ATOM);
+      it = it->val.list.next;
+    }
+
+    auto* progn = args;
+    progn->type = ValueType::PROGN;
+
+    return newFun(env, newAtom("anon"), params, progn, false);
+  }));
+
   putInEnv(env, newAtom("if"), newCFun([](Obj* env, Obj* args){
     const auto len = Vault::len(args);
     auto* comp = eval(env, args->get(0));
@@ -233,11 +249,45 @@ Obj* Vault::newStdEnv() {
   putInEnv(env, newAtom("while"), newCFun([](Obj* env, Obj* args){
     auto* expr = shift(args);
     auto* body = args;
+    if (!body) { 
+      while (true) {}
+      return newUnit(); 
+    }
     body->type = ValueType::PROGN;
 
     auto* newEnv = cons(newList(), env);
     while (isTrue(eval(env, expr))){
       eval(newEnv, body);
+    }
+
+    return newUnit();
+  }));
+
+  putInEnv(env, newAtom("each"), newCFun([](Obj* env, Obj* args){
+    auto* xs = eval(env, shift(args));
+
+    auto* progn = args;
+    progn->type = ValueType::PROGN;
+
+    if (xs->type != ValueType::LIST) {
+      std::cout << "Error, each expects a list" << std::endl;
+      std::exit(0);
+    }
+
+    auto it = xs; 
+    auto* newEnv = cons(newList(), env);
+
+    auto* value = putInEnv(newEnv, newAtom("it"), it->val.list.slot);
+
+    while (it) { 
+      *value = *it->val.list.slot; 
+
+      if (value->type != ValueType::UNIT)
+        eval(newEnv, progn);
+      else 
+        break;
+
+      it = it->val.list.next;
     }
 
     return newUnit();
@@ -274,6 +324,22 @@ Obj* Vault::newStdEnv() {
     auto* a = eval(env, shift(args));
     auto* b = eval(env, shift(args));
     return cons(a, b);
+  }));
+
+  putInEnv(env, newAtom("fst"), newCFun([](Obj* env, Obj* args){
+    return car(eval(env, shift(args)));
+  }));
+
+  putInEnv(env, newAtom("snd"), newCFun([](Obj* env, Obj* args){
+    return car(cdr(eval(env, shift(args))));
+  }));
+
+  putInEnv(env, newAtom("rest"), newCFun([](Obj* env, Obj* args){
+    return cdr(eval(env, shift(args)));
+  }));
+
+  putInEnv(env, newAtom("rest"), newCFun([](Obj* env, Obj* args){
+    return cdr(eval(env, shift(args)));
   }));
 
   putInEnv(env, newAtom("car"), newCFun([](Obj* env, Obj* args){
@@ -347,15 +413,41 @@ Obj* Vault::newStdEnv() {
 std::string readChar(int i) {
   char chr = '\0';
 
+  // Redirect cout.
+  std::streambuf* oldCoutStreamBuf = std::cout.rdbuf();
+  std::ostringstream strCout;
+  std::cout.rdbuf( strCout.rdbuf() );
+
   system("stty raw");
   chr = getchar();
   system("stty cooked");
+
+  std::cout.rdbuf( oldCoutStreamBuf ); 
 
   return std::string{chr};
 }
 
 void Vault::initAnsiTerm(Obj* env) {
-  putInEnv(env, newAtom("term/read-char"), newNative(readChar));
+  putInEnv(env, newAtom("term/read-char"), newNative(readChar)); 
+
+  putInEnv(env, newAtom("term/get-size"), newCFun([](Obj* env, Obj* args){ 
+#ifdef __unix__
+    struct winsize sz;
+    static int inout; 
+    memset(&sz, 0, sizeof(sz));
+    ioctl(inout, TIOCGWINSZ, &sz);
+
+    Obj* res = newList();
+    push(res, newNum(sz.ws_row));
+    push(res, newNum(sz.ws_col));
+    return res;
+#else 
+    Obj* res = newList();
+    push(res, newNum(0));
+    push(res, newNum(0));
+    return res;
+#endif
+  })); 
 } 
 
 void drawRect(double x, double y, double w, double h) {
