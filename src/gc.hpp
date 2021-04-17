@@ -23,6 +23,7 @@ namespace Vault {
       .buff = NULL,
       .capacity = 0,
       .size = 0,
+      .tries = 0,
     };
 
     void put(Obj* obj);
