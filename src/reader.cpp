@@ -155,6 +155,11 @@ Obj* readExpr(std::string::iterator& it, std::string::iterator& end) {
         if (*it == '}') { it += 1; return dict; }
       }
 
+      if (it == end) {
+        std::cout << "Reader error, missing closing brace for dictionary literal" << std::endl;
+        return newUnit();
+      }
+
       return dict;
     }
 

@@ -131,10 +131,10 @@ namespace Vault {
           auto key = slot->val.list.a;
           auto value = slot->val.list.b;
 
-          os << "[" << key << " " << value << "] ";
+          os << key << " " << value;
 
           it = it->val.list.next;
-          if (it){ os << " "; }
+          if (it){ os << "  "; }
         }
         os << "}";
         break;

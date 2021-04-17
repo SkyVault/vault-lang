@@ -51,7 +51,6 @@ Obj* evalExpr(Obj* env, Obj* obj) {
     case ValueType::BOOL:
     case ValueType::NUMBER:
     case ValueType::STR:
-    case ValueType::DICT:
       return obj;
 
     case ValueType::ATOM: {
@@ -61,6 +60,17 @@ Obj* evalExpr(Obj* env, Obj* obj) {
         return newUnit();
       }
       return value;
+    }
+
+    case ValueType::DICT: {
+      // Evaluate values
+      auto it = obj;
+      while (it && it->val.list.slot) {
+        auto pair = it->val.list.slot;
+        pair->val.list.b = eval(env, pair->val.list.b);
+        it = it->val.list.next;
+      }
+      return obj;
     }
 
     case ValueType::LIST: {
