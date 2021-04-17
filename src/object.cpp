@@ -25,6 +25,13 @@ Obj* Vault::newList(bool quoted) {
   return obj;
 }
 
+Obj* Vault::newDict(bool quoted) {
+  auto* obj = newPair(NULL, NULL);
+  if (quoted) obj->flags |= Flags::QUOTED;
+  obj->type = Vault::ValueType::DICT;
+  return obj; 
+}
+
 Obj* Vault::newNum(Number number) {
   Obj* obj = newObj();
   obj->type = Vault::ValueType::NUMBER; 
@@ -218,7 +225,7 @@ size_t Vault::len(Obj* list) {
 }
 
 void Vault::push(Obj* list, Obj* value) {
-  assert(list->type == ValueType::LIST || list->type == ValueType::PROGN);
+  assert(list->type == ValueType::LIST || list->type == ValueType::PROGN || list->type == ValueType::DICT);
 
   auto it = list; 
 
@@ -283,4 +290,28 @@ void Vault::printEnv(Obj* env) {
     scopeIndex++;
     scope = scope->val.list.next;
   }
+}
+
+Obj* findPair(Obj* dict, Obj* key) {
+  auto it = dict;
+  while (it) {
+    auto pair = it->val.list.slot;
+    if (pair && cmp(fst(pair), key)) {
+      return pair;
+    }
+    it = it->val.list.next;
+  }
+  return NULL;
+}
+
+Obj* Vault::put(Obj* dict, Obj* key, Obj* value) {
+  auto* exists = findPair(dict, key);
+  if (exists) { exists->val.list.b = value; return value; }
+  else push(dict, newPair(key, value));
+}
+
+Obj* Vault::get(Obj* dict, Obj* key) {
+  auto* pair = findPair(dict, key);
+  if (pair) return pair->val.list.b;
+  return newUnit();
 }

@@ -30,6 +30,7 @@ namespace Vault {
   Obj* newStr(const std::string &str="");
   Obj* newAtom(const std::string &atom="", bool quoted=false);
   Obj* newProgn(bool quoted=false); 
+  Obj* newDict(bool quoted=false);
   Obj* newPair(Obj* a=NULL, Obj* b=NULL, bool quoted=false);
   Obj* newCFun(CFun lambda);
   Obj* newFun(Obj* env, Obj* name, Obj* params, Obj* progn, bool quoted=false);
@@ -133,17 +134,18 @@ namespace Vault {
   bool cmp(Obj* a, Obj* b);
   bool isTrue(Obj* v);
 
-  void each(Obj* list, std::function<void(Obj*)> fn);
-
-  size_t len(Obj* list);
-
-  void push(Obj* list, Obj* value);
-
+  // Lists 
+  void each(Obj* list, std::function<void(Obj*)> fn); 
+  size_t len(Obj* list); 
+  void push(Obj* list, Obj* value); 
   Obj* cons(Obj* list, Obj* value); 
   Obj* car(Obj* list);
-  Obj* cdr(Obj* list);
-
+  Obj* cdr(Obj* list); 
   Obj* shift(Obj* &list); // Pops off the top
+
+  // Dictionaries
+  Obj* put(Obj* dict, Obj* key, Obj* value);
+  Obj* get(Obj* dict, Obj* key);
 
   void printEnv(Obj* env);
 }

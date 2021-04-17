@@ -79,10 +79,11 @@ namespace Vault {
     Str str;
     Bool boolean;
     List list; 
-    Dict dict;
     CFun cfun;
     Fun fun;
     FnBridge* native;
+
+    Dict dict;
   };
 
   struct Obj {
@@ -99,8 +100,8 @@ namespace Vault {
 
   inline std::ostream& operator<<(std::ostream& os, const Obj* obj) {
     if (!obj) return os;
-    if (obj->mark) std::cout << "\033[1;41m";
-    else std::cout << "\033[1;46m";
+    // if (obj->mark) std::cout << "\033[1;41m";
+    // else std::cout << "\033[1;46m";
     switch(obj->type) {
       case ValueType::UNIT: { os << "()"; break; }
       case ValueType::ATOM: { os << obj->toStrView(); break; }
@@ -118,6 +119,24 @@ namespace Vault {
           if (it){ os << " "; }
         }
         os << ")";
+        break;
+      }
+
+      case ValueType::DICT: { 
+        std::cout << "{";
+        auto it = (Obj*)obj;
+        while (it) {
+          auto slot = it->val.list.slot;
+
+          auto key = slot->val.list.a;
+          auto value = slot->val.list.b;
+
+          os << "[" << key << " " << value << "] ";
+
+          it = it->val.list.next;
+          if (it){ os << " "; }
+        }
+        os << "}";
         break;
       }
 
@@ -143,6 +162,6 @@ namespace Vault {
 
       default: std::cout << "<unknown: " << ValueTypeS[obj->type] << ">"; break;
     }
-    std::cout << "\033[0m"; 
+    // std::cout << "\033[0m"; 
   } 
 }

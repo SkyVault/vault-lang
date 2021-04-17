@@ -8,7 +8,7 @@
 #include <iostream>
 
 #define HEAP_CHUNK 32
-#define MARK_AND_SWEAP_INTERVAL 10 
+#define MARK_AND_SWEAP_INTERVAL 100
 
 namespace Vault { 
   namespace Gc { 

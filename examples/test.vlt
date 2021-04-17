@@ -1,8 +1,7 @@
 (require 'prelude)
 
-(defun fact (n)
-  (if (< n 2)
-    1
-    (* n (fact (- n 1)))))
+(def x (dict 'a 100 'b 200))
 
-(println "!5 = " (fact 5))
+(put x 'a 200)
+
+(println x)

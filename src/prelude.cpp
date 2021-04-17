@@ -316,6 +316,47 @@ Obj* Vault::newStdEnv() {
     return args;
   }));
 
+  putInEnv(env, newAtom("dict"), newCFun([](Obj* env, Obj* args){
+    if (Vault::len(args) == 0) return newDict(); 
+    auto* self = newDict();
+
+    args->type = ValueType::LIST;
+
+    int i = 0;
+
+    auto it = args;
+    while (it) { 
+      auto key = eval(env, it->val.list.slot);
+      it = it->val.list.next;
+      auto value = eval(env, it->val.list.slot);
+      it = it->val.list.next;
+
+      if (!value) {
+        std::cout << "Error, dict is missing a value for key: " << key << std::endl;
+        std::exit(0);
+      }
+
+      Vault::put(self, key, value);
+
+      i++;
+    } 
+
+    return self;
+  }));
+
+  putInEnv(env, newAtom("get"), newCFun([](Obj* env, Obj* args){
+    auto dict = eval(env, shift(args));
+    auto key = eval(env, shift(args));
+    return Vault::get(dict, key);
+  }));
+
+  putInEnv(env, newAtom("put"), newCFun([](Obj* env, Obj* args){
+    auto dict = eval(env, shift(args));
+    auto key = eval(env, shift(args));
+    auto newValue = eval(env, shift(args));
+    return Vault::put(dict, key, newValue);
+  }));
+
   putInEnv(env, newAtom("len"), newCFun([](Obj* env, Obj* args){
     return newNum(Vault::len(eval(env, shift(args))));
   }));
