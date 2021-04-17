@@ -51,6 +51,7 @@ Obj* evalExpr(Obj* env, Obj* obj) {
     case ValueType::BOOL:
     case ValueType::NUMBER:
     case ValueType::STR:
+    case ValueType::DICT:
       return obj;
 
     case ValueType::ATOM: {

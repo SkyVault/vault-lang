@@ -18,6 +18,8 @@
   GEN(TOK_BOOL_LIT)     \
   GEN(TOK_OPEN_PAREN)   \
   GEN(TOK_CLOSE_PAREN)  \
+  GEN(TOK_OPEN_BRACE)   \
+  GEN(TOK_CLOSE_BRACE)  \
   GEN(TOK_QUOTE)        \
   GEN(NUM_TOK_TYPE)
 
@@ -53,14 +55,10 @@ namespace Vault {
         os << "<bool " << (tok.lexeme == "t" ? "true" : "false") << ">";
         return os;
       }
-      case TokType::TOK_OPEN_PAREN: {
-        os << "<(>";
-        return os;
-      }
-      case TokType::TOK_CLOSE_PAREN: {
-        os << "<)>";
-        return os;
-      }
+      case TokType::TOK_OPEN_PAREN: { os << "<(>"; return os; }
+      case TokType::TOK_CLOSE_PAREN: { os << "<)>"; return os; }
+      case TokType::TOK_OPEN_BRACE: { os << "<{>"; return os; }
+      case TokType::TOK_CLOSE_BRACE: { os << "<}>"; return os; }
       default: {
         os << "<unknown " << tok.type << ">";
         return os;

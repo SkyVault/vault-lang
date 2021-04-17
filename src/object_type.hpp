@@ -125,7 +125,7 @@ namespace Vault {
       case ValueType::DICT: { 
         std::cout << "{";
         auto it = (Obj*)obj;
-        while (it) {
+        while (it && it->val.list.slot) {
           auto slot = it->val.list.slot;
 
           auto key = slot->val.list.a;

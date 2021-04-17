@@ -82,15 +82,11 @@ Tok Vault::readToken(std::string::iterator& it, std::string::iterator& end) {
   }
 
   // parsing single character lexemes
-  if (*it == '(') {
-    it += 1;
-    return Tok{ TokType::TOK_OPEN_PAREN, "(" }; 
-  }
+  if (*it == '(') { it += 1; return Tok{ TokType::TOK_OPEN_PAREN, "(" }; } 
+  if (*it == ')') { it += 1; return Tok{ TokType::TOK_CLOSE_PAREN, ")" }; }
 
-  if (*it == ')') {
-    it += 1;
-    return Tok{ TokType::TOK_CLOSE_PAREN, ")" }; 
-  }
+  if (*it == '{') { it += 1; return Tok{ TokType::TOK_OPEN_BRACE, "{" }; } 
+  if (*it == '}') { it += 1; return Tok{ TokType::TOK_CLOSE_BRACE, "}" }; }
 
   if (*it == '\'') {
     it += 1;
@@ -138,8 +134,33 @@ Obj* readExpr(std::string::iterator& it, std::string::iterator& end) {
       return newUnit();
     }
 
+    case TokType::TOK_OPEN_BRACE: {
+      auto* dict = newDict(quoted);
+
+      while (it != end) {
+        auto* key = readExpr(it, end);
+        if (key->type == ValueType::UNIT) return dict;
+        if (it == end || *it == '}') {
+          std::cout << "Reader error, dictionary literal is missing a value for the key: " << key << std::endl;
+          return newUnit();
+        }
+        auto* value = readExpr(it, end);
+        if (!value) {
+          std::cout << "Reader error, dictionary literal is missing a value for the key: " << key << std::endl;
+          return newUnit();
+        }
+
+        Vault::put(dict, key, value);
+
+        if (*it == '}') { it += 1; return dict; }
+      }
+
+      return dict;
+    }
+
     case TokType::TOK_END:
     case TokType::TOK_CLOSE_PAREN: { return newUnit(); }
+    case TokType::TOK_CLOSE_BRACE: { return newUnit(); }
 
     default: {
       std::cout << "Unhandled token in readExpr: " << TokTypeS[tok.type] << " = " << tok.lexeme <<  std::endl;
