@@ -285,7 +285,7 @@ void Vault::printEnv(Obj* env) {
   int scopeIndex = 0;
 
   while (scope && scope->val.list.slot) { 
-    std::cout << "--- SCOPE " << scopeIndex << " ---\n"; 
+    std::cout << "--- SCOPE(" << scopeIndex << ") ---\n"; 
     std::cout << scope->val.list.slot << std::endl;
     scopeIndex++;
     scope = scope->val.list.next;
@@ -296,9 +296,8 @@ Obj* findPair(Obj* dict, Obj* key) {
   auto it = dict;
   while (it) {
     auto pair = it->val.list.slot;
-    if (pair && cmp(fst(pair), key)) {
-      return pair;
-    }
+    if (pair && cmp(fst(pair), key)) 
+      return pair; 
     it = it->val.list.next;
   }
   return NULL;
