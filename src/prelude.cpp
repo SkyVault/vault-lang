@@ -310,6 +310,12 @@ Obj* Vault::newStdEnv() {
     return env;
   }));
 
+  putInEnv(env, newAtom("time"), newCFun([](Obj* env, Obj* args){
+    std::time_t result = std::time(nullptr);
+    const auto asc = std::asctime(std::localtime(&result));
+    return newNum((double)result);
+  }));
+
   putInEnv(env, newAtom("list"), newCFun([](Obj* env, Obj* args){
     if (Vault::len(args) == 0) return newList();
     args->type = ValueType::LIST;
@@ -439,11 +445,6 @@ Obj* Vault::newStdEnv() {
     return newUnit();
   }));
 
-  putInEnv(env, newAtom("init-raylib"), newCFun([](Obj* env, Obj* args){
-    initRaylib(env);
-    return newUnit();
-  }));
-
   putInEnv(env, newAtom("sin"), newNative(sin));
   putInEnv(env, newAtom("cos"), newNative(cos));
   putInEnv(env, newAtom("atan2"), newNative(atan2));
@@ -457,13 +458,14 @@ std::string readChar(int i) {
   // Redirect cout.
   std::streambuf* oldCoutStreamBuf = std::cout.rdbuf();
   std::ostringstream strCout;
-  std::cout.rdbuf( strCout.rdbuf() );
+  std::cout.rdbuf(strCout.rdbuf());
 
   system("stty raw");
-  chr = getchar();
+  // chr = getchar();
+  chr = std::cin.get();
   system("stty cooked");
 
-  std::cout.rdbuf( oldCoutStreamBuf ); 
+  std::cout.rdbuf(oldCoutStreamBuf); 
 
   return std::string{chr};
 }
@@ -490,24 +492,3 @@ void Vault::initAnsiTerm(Obj* env) {
 #endif
   })); 
 } 
-
-void drawRect(double x, double y, double w, double h) {
-  DrawRectangle((int)x, (int)y, (int)w, (int)h, RED);
-}
-
-void clearBg() {
-  ClearBackground(BLACK);
-}
-
-void Vault::initRaylib(Obj* env) {
-  putInEnv(env, newAtom("rl-init-window"), newNative(InitWindow));
-  putInEnv(env, newAtom("rl-window-should-close"), newNative(WindowShouldClose));
-  putInEnv(env, newAtom("rl-begin-drawing"), newNative(BeginDrawing));
-  putInEnv(env, newAtom("rl-end-drawing"), newNative(EndDrawing));
-  putInEnv(env, newAtom("rl-draw-rectangle"), newNative(drawRect));
-  putInEnv(env, newAtom("rl-frame-time"), newNative(GetFrameTime));
-  putInEnv(env, newAtom("rl-clear-background"), newNative(clearBg));
-  putInEnv(env, newAtom("rl-draw-fps"), newNative(DrawFPS));
-  // putInEnv(env, newAtom("rl-is-key-pressed"), newNative(IsKeyPressed));
-  // putInEnv(env, newAtom("rl-is-key-down"), newNative(IsKeyDown));
-}

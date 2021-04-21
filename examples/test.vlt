@@ -1,7 +1,0 @@
-(require 'prelude)
-
-(def x (dict 'a 100 'b 200))
-
-(put x 'a 200)
-
-(println x)

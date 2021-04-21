@@ -3,6 +3,7 @@
 
 #include <raylib.h>
 #include <cmath>
+#include <ctime>
 
 #ifdef __unix__
 #include <termios.h>
@@ -13,5 +14,4 @@ namespace Vault {
   Obj* newStdEnv();
 
   void initAnsiTerm(Obj* env);
-  void initRaylib(Obj* env);
 }

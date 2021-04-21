@@ -1,0 +1,63 @@
+(def +code-black+   "0m")
+(def +code-red+     "1m")
+(def +code-green+   "2m")
+(def +code-yellow+  "3m")
+(def +code-blue+    "4m")
+(def +code-magenta+ "5m")
+(def +code-cyan+    "6m")
+(def +code-white+   "7m") 
+
+(def +bg-black+   (concat "\033[1;4" +code-black+))
+(def +bg-red+     (concat "\033[1;4" +code-red+))
+(def +bg-green+   (concat "\033[1;4" +code-green+))
+(def +bg-yellow+  (concat "\033[1;4" +code-yellow+))
+(def +bg-blue+    (concat "\033[1;4" +code-blue+))
+(def +bg-magenta+ (concat "\033[1;4" +code-magenta+))
+(def +bg-cyan+    (concat "\033[1;4" +code-cyan+))
+(def +bg-white+   (concat "\033[1;4" +code-white+)) 
+
+(def +fg-black+   (concat "\033[1;3" +code-black+))
+(def +fg-red+     (concat "\033[1;3" +code-red+))
+(def +fg-green+   (concat "\033[1;3" +code-green+))
+(def +fg-yellow+  (concat "\033[1;3" +code-yellow+))
+(def +fg-blue+    (concat "\033[1;3" +code-blue+))
+(def +fg-magenta+ (concat "\033[1;3" +code-magenta+))
+(def +fg-cyan+    (concat "\033[1;3" +code-cyan+))
+(def +fg-white+   (concat "\033[1;3" +code-white+))
+
+(def +clear+ "\033[0m") 
+
+(defun set-cursor-position (x y)
+  (print "\033[" (num->int-str y) ";" (num->int-str x) "H"))
+
+(defun set-cursor-zero ()
+  (print "\033[H"))
+
+(defun hide-cursor ()
+  (print "\033[?25l"))
+
+(defun show-cursor ()
+  (print "\033[?25h"))
+
+(init-ansi-term-env)
+
+(defun list? (v) (= (type? v) 'list))
+(defun atom? (v) (= (type? v) 'atom))
+(defun func? (v) (= (type? v) 'func))
+(defun cfunc? (v) (= (type? v) 'cfunc))
+(defun native-func? (v) (= (type? v) 'native-func))
+(defun number? (v) (= (type? v) 'number))
+(defun bool? (v) (= (type? v) 'bool)) 
+(defun str? (v) (= (type? v) 'str))
+
+(defun map (fn xs)
+  (if (not (empty? xs))
+    (cons 
+      (fn (car xs)) 
+      (map fn (cdr xs)))))
+
+(defun filter (fn xs)
+  (if (not (empty? xs))
+    (if (fn (car xs))
+      (cons (car xs) (filter fn (cdr xs)))
+      (filter fn (cdr xs)))))

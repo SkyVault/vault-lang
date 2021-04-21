@@ -1,3 +1,31 @@
-(rl-init-env)
+(require 'prelude)
 
-(rl-init-window)
+(defun new-player (name) { 'name name })
+
+(def game {'player (new-player "anon")})
+
+(defun sleep (secs)
+  (let (start (time))
+    (while (< (- (time) start) secs) 
+      (println (- (time) start) " " secs)))) 
+
+(println "A")
+(sleep 1)
+(println "B")
+
+(defun display-intro ()
+  (println "Welcome to the " +fg-magenta+ "Journey to Canterbury" +clear+))
+
+(defun create-character ()
+  (let (player (get game 'player))
+    (println "Now lets create a character")
+    (sleep )
+    (println "What is your name?")
+    (put player 'name (readln))))
+
+(defun start ()
+  (display-intro)
+  (sleep 1)
+  (create-character))
+
+(start) 

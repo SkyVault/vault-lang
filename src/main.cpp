@@ -49,12 +49,55 @@ void newProject(ArgsIter it, ArgsIter end) {
   std::string projectName = *it; 
 
   std::filesystem::create_directory(projectName); 
-  std::ofstream projectFile(projectName + "/" + projectName + ".conf.vlt");
+  std::ofstream projectFile(projectName + "/" + projectName + ".vlt-conf");
   std::ofstream entryFile(projectName + "/" + projectName + ".vlt");
-  projectFile << "";
-  entryFile << "";
+  projectFile << "{ 'project-name " << projectName << " }";
+  entryFile << "(println \"Hello, World!\")";
   projectFile.close();
   entryFile.close();
+}
+
+Obj* getConfig() { 
+  auto* env = newStdEnv();
+  for (const auto& file : std::filesystem::directory_iterator(".")) {
+    if (file.path().extension() == ".vlt-conf") {
+      auto* result = Vault::eval(env, readCode(readFile(file.path())));
+      if (result->type != ValueType::DICT) {
+        std::cout << "Error, config file requires a dictionary" << std::endl;
+        return newUnit();
+      }
+      return result;
+    }
+  } 
+  return newUnit();
+}
+
+void runProject(ArgsIter it, ArgsIter end) { 
+  auto* config = getConfig();
+  if (config->type == ValueType::UNIT) {
+    std::cout << "Error, project is missing a config file" << std::endl;
+    std::exit(0);
+  }
+
+  auto* name = Vault::get(config, newAtom("project-name"));
+  if (!name || name->type != ValueType::STR) {
+    std::cout << "Error, config expects to have a project-name field." << std::endl;
+    std::exit(0);
+  }
+
+  std::stringstream ss;
+  ss << name;
+  const std::string projectName{ss.str()};
+  const auto entryPath = projectName + ".vlt";
+
+  if (!std::filesystem::exists(entryPath)) {
+    std::cout << "Error, cannot find entrypoint, a file named the project name is expected to be in the root of the project" << std::endl;
+    Vault::Gc::sweep();
+    std::exit(0);
+  }
+
+  Vault::Gc::sweep();
+  runScript(newStdEnv(), entryPath);
 }
 
 void test(const char* hello) {
@@ -70,6 +113,8 @@ int main(const int num_args, const char* args[]) {
 
   if (pargs[1] == "new") {
     newProject(pargs.begin() + 1, pargs.end());
+  } else if (pargs[1] == "run") {
+    runProject(pargs.begin() + 1, pargs.end());
   } else { 
     auto* env = newStdEnv();
     runScript(env, pargs[1]); 
