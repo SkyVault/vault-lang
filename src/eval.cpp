@@ -102,6 +102,6 @@ Obj* evalExpr(Obj* env, Obj* obj) {
 }
 
 Obj* Vault::eval(Obj* env, Obj* obj, bool noGc) {
-  if (!noGc) Vault::Gc::tryMarkAndSweep(env);
+  // if (!noGc) Vault::Gc::tryMarkAndSweep(); 
   return evalExpr(env, obj);
 }

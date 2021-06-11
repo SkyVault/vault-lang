@@ -61,3 +61,7 @@
     (if (fn (car xs))
       (cons (car xs) (filter fn (cdr xs)))
       (filter fn (cdr xs)))))
+      
+(defun sleep (secs)
+  (let (start (time))
+    (while (< (- (time) start) secs)))) 

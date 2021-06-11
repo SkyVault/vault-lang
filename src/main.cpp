@@ -17,6 +17,7 @@ Vault::Status repl() {
   std::cout << "Vault (" << VAULT_VERSION << ")\n";
 
   auto* env = Vault::newStdEnv(); 
+  Vault::Gc::setRoot(env);
 
   while (true) {
     std::cout << VAULT_PROMPT;
@@ -25,7 +26,7 @@ Vault::Status repl() {
     auto* progn = Vault::readCode(line);
     auto* result = Vault::eval(env, progn, true);
     std::cout << result << std::endl;
-    Vault::Gc::markAndSweep(env);
+    Vault::Gc::markAndSweep();
   }
 
   Vault::Gc::sweep();
@@ -96,8 +97,11 @@ void runProject(ArgsIter it, ArgsIter end) {
     std::exit(0);
   }
 
-  Vault::Gc::sweep();
-  runScript(newStdEnv(), entryPath);
+  // Vault::Gc::sweep(); 
+
+  auto* env = newStdEnv();
+  Vault::Gc::setRoot(env);
+  runScript(env, entryPath);
 }
 
 void test(const char* hello) {
@@ -117,6 +121,7 @@ int main(const int num_args, const char* args[]) {
     runProject(pargs.begin() + 1, pargs.end());
   } else { 
     auto* env = newStdEnv();
+    Vault::Gc::setRoot(env);
     runScript(env, pargs[1]); 
   } 
 

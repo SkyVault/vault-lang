@@ -19,7 +19,7 @@
 (defun create-character ()
   (let (player (get game 'player))
     (println "Now lets create a character")
-    (sleep )
+    (sleep 1)
     (println "What is your name?")
     (put player 'name (readln))))
 

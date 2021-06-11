@@ -62,6 +62,7 @@ namespace Vault {
   enum Flags {
     NONE = 1 << 0,
     QUOTED = 1 << 1,
+    FROZEN = 1 << 2,
   };
 
   struct Fun {
@@ -100,8 +101,8 @@ namespace Vault {
 
   inline std::ostream& operator<<(std::ostream& os, const Obj* obj) {
     if (!obj) return os;
-    // if (obj->mark) std::cout << "\033[1;41m";
-    // else std::cout << "\033[1;46m";
+    if (obj->mark) std::cout << "\033[1;31m";
+    else std::cout << "\033[1;36m";
     switch(obj->type) {
       case ValueType::UNIT: { os << "()"; break; }
       case ValueType::ATOM: { os << obj->toStrView(); break; }
@@ -162,6 +163,6 @@ namespace Vault {
 
       default: std::cout << "<unknown: " << ValueTypeS[obj->type] << ">"; break;
     }
-    // std::cout << "\033[0m"; 
+    std::cout << "\033[0m"; 
   } 
 }

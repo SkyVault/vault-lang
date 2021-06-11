@@ -8,7 +8,7 @@
 #include <iostream>
 
 #define HEAP_CHUNK 32
-#define MARK_AND_SWEAP_INTERVAL 100
+#define MARK_AND_SWEAP_INTERVAL 0
 
 namespace Vault { 
   namespace Gc { 
@@ -26,19 +26,22 @@ namespace Vault {
       .tries = 0,
     };
 
-    void put(Obj* obj);
+    Obj* put(Obj* obj);
 
     static Obj* alloc(){ 
       auto* it = (Obj*)malloc(sizeof(Obj)); 
-      put(it); 
-      return it;
+      return put(it); 
     }
+
+    static Obj* root = NULL;
+
+    void setRoot(Obj* root);
 
     void mark(Obj* obj);
     void sweep();
 
-    void markAndSweep(Obj* root);
-    void tryMarkAndSweep(Obj* root);
+    void markAndSweep();
+    void tryMarkAndSweep();
 
     void freeObj(Obj* obj); 
   }

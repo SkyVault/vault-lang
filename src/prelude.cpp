@@ -250,7 +250,7 @@ Obj* Vault::newStdEnv() {
     auto* expr = shift(args);
     auto* body = args;
     if (!body) { 
-      while (true) {}
+      while (isTrue(eval(env, expr))) {}
       return newUnit(); 
     }
     body->type = ValueType::PROGN;

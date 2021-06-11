@@ -3,7 +3,7 @@
 using namespace Vault::Gc;
 using namespace Vault;
 
-void Vault::Gc::put(Obj* obj) { 
+Obj* Vault::Gc::put(Obj* obj) { 
   if (heap.capacity == heap.size) {
     if (heap.capacity == 0) { heap.capacity = HEAP_CHUNK; }
     else heap.capacity *= 2;
@@ -15,9 +15,11 @@ void Vault::Gc::put(Obj* obj) {
   }
 
   heap.buff[heap.size++] = obj;
+  return obj;
 }
 
 void Vault::Gc::freeObj(Obj* obj) { 
+  // std::cout << "FREEING" << std::endl;
   if (!obj) return;
   switch(obj->type) {
     case ValueType::UNIT: break;
@@ -52,7 +54,7 @@ void Vault::Gc::freeObj(Obj* obj) {
 }
 
 void Vault::Gc::mark(Obj* obj) {
-  if (obj == NULL) return;
+  if (obj == NULL || obj->mark) return;
   obj->mark = true; 
   switch(obj->type) {
     case ValueType::UNIT:
@@ -73,6 +75,7 @@ void Vault::Gc::mark(Obj* obj) {
       mark(obj->val.dict.next);
       break;
     case ValueType::FUNC:
+      mark(obj->val.fun.capturedEnv);
       mark(obj->val.fun.name);
       mark(obj->val.fun.params);
       mark(obj->val.fun.progn);
@@ -83,11 +86,25 @@ void Vault::Gc::mark(Obj* obj) {
   }
 }
 
+void sortNulls() { 
+  for (int i = 0; i < heap.capacity; i++) {
+    if (heap.buff[i] == NULL) { 
+      for (int j = i + 1; j < heap.capacity; j++) {
+        if (heap.buff[j] != NULL) {
+          heap.buff[i] = heap.buff[j];
+          heap.buff[j] = NULL;
+          break;
+        }
+      }
+    }
+  } 
+}
+
 void Vault::Gc::sweep() {
   const auto size = heap.size;
   for (size_t i = 0; i < size; i++) {
     Obj* obj = heap.buff[i];
-    if (obj) {
+    if (obj && !(obj->flags & Flags::FROZEN)) {
       if (obj->mark) {
         obj->mark = false;
       } else {
@@ -98,34 +115,32 @@ void Vault::Gc::sweep() {
     }
   }
 
-  // Sort nulls to the back
-  for (int i = 0; i < size; i++) {
-    if (heap.buff[i] == NULL) { 
-      for (int j = i + 1; j < size; j++) {
-        if (heap.buff[j] != NULL) {
-          heap.buff[i] = heap.buff[j];
-          heap.buff[j] = NULL;
-          break;
-        }
+  sortNulls();
 
-        if (j >= size - 1) {
-          return;
-        }
-      }
-    }
-  }
+  // for (int i = 0; i < size; i++) {
+  //   if (heap.buff[i] == NULL)
+  //     std::cout << "NULL" << std::endl;
+  //   else
+  //     std::cout << "::" << heap.buff[i] << std::endl;
+  // }
 }
 
-void Vault::Gc::tryMarkAndSweep(Obj* root) {
+void Vault::Gc::setRoot(Obj* theRoot) {
+  root = theRoot;
+}
+
+void Vault::Gc::tryMarkAndSweep() {
+  if (!root) return;
   if (heap.tries > MARK_AND_SWEAP_INTERVAL) {
-    Vault::Gc::markAndSweep(root);
+    Vault::Gc::markAndSweep();
     heap.tries = 0;
     return;
   }
   heap.tries++;
 }
 
-void Vault::Gc::markAndSweep(Obj* root) {
+void Vault::Gc::markAndSweep() {
   mark(root);
   sweep();
+  // std::cout << std::endl;
 }
